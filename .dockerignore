@@ -41,3 +41,8 @@
 **/.git/
 .DS_Store
 **/.DS_Store
+# Bunny files required by bunny/Dockerfile; retain minimal source build context.
+!bunny/
+!bunny/config/
+!bunny/config/init.conf
+!bunny/docker-entrypoint.sh
