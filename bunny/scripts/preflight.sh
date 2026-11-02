@@ -47,21 +47,11 @@ printf 'PASS: short password rejected\n'
 
 [ -f "$ROOT_DIR/bunny/compose.yaml" ]
 [ -f "$ROOT_DIR/bunny/Dockerfile" ] || { echo 'Missing Bunny Dockerfile' >&2; exit 1; }
-[ "$(grep -c '^HEALTHCHECK ' "$ROOT_DIR/bunny/Dockerfile")" -eq 1 ] || { echo 'Duplicate HEALTHCHECK detected' >&2; exit 1; }
-[ "$(grep -c '^ENTRYPOINT ' "$ROOT_DIR/bunny/Dockerfile")" -eq 1 ] || { echo 'Duplicate ENTRYPOINT detected' >&2; exit 1; }
-grep -q '^!bunny/docker-entrypoint.sh
-printf 'LAMPAC_BUNNY_PREFLIGHT_PASS\n'
- "$ROOT_DIR/.dockerignore" || { echo 'Bunny entrypoint excluded from build context' >&2; exit 1; }
-grep -q '^!bunny/config/init.conf
-printf 'LAMPAC_BUNNY_PREFLIGHT_PASS\n'
- "$ROOT_DIR/.dockerignore" || { echo 'Bunny init.conf excluded from build context' >&2; exit 1; }
-grep -q '^ARG SDK_IMAGE=mcr.microsoft.com/dotnet/sdk:10.0
-printf 'PASS: Dockerfile and build context static audit\n'
-printf 'LAMPAC_BUNNY_PREFLIGHT_PASS\n'
- "$ROOT_DIR/bunny/Dockerfile" || { echo 'Expected official .NET SDK image missing' >&2; exit 1; }
-grep -q '^ARG RUNTIME_IMAGE=mcr.microsoft.com/dotnet/aspnet:10.0
-printf 'PASS: Dockerfile and build context static audit\n'
-printf 'LAMPAC_BUNNY_PREFLIGHT_PASS\n'
- "$ROOT_DIR/bunny/Dockerfile" || { echo 'Expected official .NET runtime image missing' >&2; exit 1; }
+[ "$(grep -c '^HEALTHCHECK ' "$ROOT_DIR/bunny/Dockerfile")" -eq 1 ] || { echo 'Expected exactly one HEALTHCHECK' >&2; exit 1; }
+[ "$(grep -c '^ENTRYPOINT ' "$ROOT_DIR/bunny/Dockerfile")" -eq 1 ] || { echo 'Expected exactly one ENTRYPOINT' >&2; exit 1; }
+grep -Fqx -- '!bunny/docker-entrypoint.sh' "$ROOT_DIR/.dockerignore" || { echo 'Bunny entrypoint excluded from build context' >&2; exit 1; }
+grep -Fqx -- '!bunny/config/init.conf' "$ROOT_DIR/.dockerignore" || { echo 'Bunny config excluded from build context' >&2; exit 1; }
+grep -Fqx -- 'ARG SDK_IMAGE=mcr.microsoft.com/dotnet/sdk:10.0' "$ROOT_DIR/bunny/Dockerfile" || { echo 'Expected .NET SDK base is missing' >&2; exit 1; }
+grep -Fqx -- 'ARG RUNTIME_IMAGE=mcr.microsoft.com/dotnet/aspnet:10.0' "$ROOT_DIR/bunny/Dockerfile" || { echo 'Expected ASP.NET runtime base is missing' >&2; exit 1; }
 printf 'PASS: Dockerfile and build context static audit\n'
 printf 'LAMPAC_BUNNY_PREFLIGHT_PASS\n'
