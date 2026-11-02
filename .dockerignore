@@ -46,3 +46,9 @@
 !bunny/config/
 !bunny/config/init.conf
 !bunny/docker-entrypoint.sh
+
+# Bunny deployment adapter is included in source-built images.
+!bunny/
+!bunny/config/
+!bunny/config/init.conf
+!bunny/docker-entrypoint.sh
