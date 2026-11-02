@@ -15,7 +15,7 @@
                            SQLite volume         cache volume
 ```
 
-- **Source of code:** full preserved Lampac NextGen fork in this repository, compiled by `bunny/Dockerfile`. The base upstream `Dockerfile` remains available and unchanged.
+- **Source of code:** full preserved Lampac NextGen fork in this repository, compiled by the lightweight `bunny/Dockerfile` using official .NET 10 images; Chromium, GStreamer and FFmpeg are not installed in the default runtime. The base upstream `Dockerfile` remains available and unchanged.
 - **Runtime:** one service listening on HTTP/9118. Bunny terminates HTTPS at the CDN endpoint; Dockerfile health and Bunny readiness check `/version?type=hash`.
 - **Config:** `/opt/lampac-bunny/init.conf` is the immutable starter template. `bunny/docker-entrypoint.sh` writes `/lampac/init.conf` and `/lampac/passwd` from environment on every start; these are in the ephemeral application directory. Overriding requires `LAMPAC_BUNNY_CONFIG_B64` with valid JSON.
 - **State:** Lampac's own SQLite and files under `/lampac/database`, optional `/lampac/cache`. No Bunny Database, Bunny Storage or Scripting connection is made implicitly.

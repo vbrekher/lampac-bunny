@@ -4,7 +4,9 @@ set -euo pipefail
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 command -v jq >/dev/null || { echo 'jq is needed for local preflight' >&2; exit 1; }
 sh -n "$ROOT_DIR/bunny/docker-entrypoint.sh"
-bash -n "$ROOT_DIR/bunny/scripts/build-image.sh" "$ROOT_DIR/bunny/scripts/smoke.sh"
+for script in "$ROOT_DIR/bunny/scripts/build-image.sh" "$ROOT_DIR/bunny/scripts/smoke.sh" "$ROOT_DIR/bunny/scripts/doctor.sh"; do
+  bash -n "$script"
+done
 jq -e '.listen.port == 9118 and .listen.scheme == "http" and (.BaseModule.SkipModules | index("TorrServer") != null)' "$ROOT_DIR/bunny/config/init.conf" >/dev/null
 
 work=$(mktemp -d)
@@ -44,5 +46,22 @@ if sh "$entry" --configure-only >/dev/null 2>&1; then echo 'Short root password 
 printf 'PASS: short password rejected\n'
 
 [ -f "$ROOT_DIR/bunny/compose.yaml" ]
-[ -f "$ROOT_DIR/bunny/Dockerfile" ] || echo 'NOTE: Bunny Dockerfile is generated at GitHub publication step'
+[ -f "$ROOT_DIR/bunny/Dockerfile" ] || { echo 'Missing Bunny Dockerfile' >&2; exit 1; }
+[ "$(grep -c '^HEALTHCHECK ' "$ROOT_DIR/bunny/Dockerfile")" -eq 1 ] || { echo 'Duplicate HEALTHCHECK detected' >&2; exit 1; }
+[ "$(grep -c '^ENTRYPOINT ' "$ROOT_DIR/bunny/Dockerfile")" -eq 1 ] || { echo 'Duplicate ENTRYPOINT detected' >&2; exit 1; }
+grep -q '^!bunny/docker-entrypoint.sh
+printf 'LAMPAC_BUNNY_PREFLIGHT_PASS\n'
+ "$ROOT_DIR/.dockerignore" || { echo 'Bunny entrypoint excluded from build context' >&2; exit 1; }
+grep -q '^!bunny/config/init.conf
+printf 'LAMPAC_BUNNY_PREFLIGHT_PASS\n'
+ "$ROOT_DIR/.dockerignore" || { echo 'Bunny init.conf excluded from build context' >&2; exit 1; }
+grep -q '^ARG SDK_IMAGE=mcr.microsoft.com/dotnet/sdk:10.0
+printf 'PASS: Dockerfile and build context static audit\n'
+printf 'LAMPAC_BUNNY_PREFLIGHT_PASS\n'
+ "$ROOT_DIR/bunny/Dockerfile" || { echo 'Expected official .NET SDK image missing' >&2; exit 1; }
+grep -q '^ARG RUNTIME_IMAGE=mcr.microsoft.com/dotnet/aspnet:10.0
+printf 'PASS: Dockerfile and build context static audit\n'
+printf 'LAMPAC_BUNNY_PREFLIGHT_PASS\n'
+ "$ROOT_DIR/bunny/Dockerfile" || { echo 'Expected official .NET runtime image missing' >&2; exit 1; }
+printf 'PASS: Dockerfile and build context static audit\n'
 printf 'LAMPAC_BUNNY_PREFLIGHT_PASS\n'
