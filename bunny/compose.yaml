@@ -1,0 +1,27 @@
+name: lampac-bunny
+services:
+  lampac:
+    build:
+      context: ..
+      dockerfile: bunny/Dockerfile
+    image: lampac-bunny:local
+    ports:
+      - "127.0.0.1:9118:9118"
+    environment:
+      LAMPAC_ROOT_PASSWORD: ${LAMPAC_ROOT_PASSWORD:?Set LAMPAC_ROOT_PASSWORD to a unique secret of 16+ characters}
+      # For custom JSON configuration, set base64 without newlines:
+      # LAMPAC_BUNNY_CONFIG_B64: ${LAMPAC_BUNNY_CONFIG_B64}
+    volumes:
+      - lampac_database:/lampac/database
+      - lampac_cache:/lampac/cache
+    shm_size: 1gb
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "--output", "/dev/null", "http://127.0.0.1:9118/version?type=hash"]
+      interval: 30s
+      timeout: 10s
+      start_period: 90s
+      retries: 3
+volumes:
+  lampac_database:
+  lampac_cache:

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="440" viewBox="0 0 1280 440" role="img" aria-label="Lampac Bunny - independent Lampac backend for Bunny Magic Containers">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#071326"/><stop offset="0.56" stop-color="#102040"/><stop offset="1" stop-color="#172a45"/></linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#71ddff"/><stop offset="1" stop-color="#74f1c7"/></linearGradient>
+    <radialGradient id="glow"><stop stop-color="#38bdf8" stop-opacity=".24"/><stop offset="1" stop-color="#38bdf8" stop-opacity="0"/></radialGradient>
+    <pattern id="grid" width="46" height="46" patternUnits="userSpaceOnUse"><path d="M46 0H0V46" fill="none" stroke="#c5e1ff" opacity=".08"/></pattern>
+  </defs>
+  <rect width="1280" height="440" rx="24" fill="url(#bg)"/><rect width="1280" height="440" rx="24" fill="url(#grid)"/>
+  <circle cx="970" cy="210" r="270" fill="url(#glow)"/>
+  <g transform="translate(72,65)">
+    <rect x="0" y="0" width="235" height="39" rx="19" fill="#173e59" stroke="#286a82"/>
+    <circle cx="21" cy="20" r="5" fill="#70ebbf"/><text x="37" y="25" fill="#bcebf8" font-family="Arial,Helvetica,sans-serif" font-size="17" font-weight="600" letter-spacing="1">INDEPENDENT SERVER</text>
+    <text x="0" y="125" fill="#ffffff" font-family="Arial,Helvetica,sans-serif" font-size="78" font-weight="750" letter-spacing="-2">Lampac <tspan fill="url(#accent)">Bunny</tspan></text>
+    <text x="1" y="169" fill="#b8cce2" font-family="Arial,Helvetica,sans-serif" font-size="24">Your media backend. Your cloud. Your control.</text>
+    <rect x="0" y="209" width="181" height="44" rx="11" fill="#1b354f" stroke="#3d6f83"/>
+    <text x="16" y="237" fill="#daf3ff" font-family="Arial,Helvetica,sans-serif" font-size="18">.NET 10  •  Docker</text>
+    <rect x="195" y="209" width="187" height="44" rx="11" fill="#1b354f" stroke="#3d6f83"/>
+    <text x="212" y="237" fill="#daf3ff" font-family="Arial,Helvetica,sans-serif" font-size="18">Magic Containers</text>
+    <text x="1" y="301" fill="#87a7c2" font-family="Arial,Helvetica,sans-serif" font-size="17" letter-spacing="1">STANDALONE  ·  OPEN SOURCE  ·  AGPL-3.0</text>
+  </g>
+  <g transform="translate(880,88)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="0" y="74" width="273" height="177" rx="21" fill="#163652" stroke="#5eafd2" stroke-width="3"/>
+    <path d="M42 56V15Q44 -3 58 1Q80 10 86 56M190 56V15Q192 -3 206 1Q228 10 234 56" stroke="#7ee8d1" stroke-width="21"/>
+    <path d="M77 115h120M77 154h120M77 193h77" stroke="#72d6e9" stroke-width="8"/>
+    <circle cx="29" cy="120" r="9" fill="#71e9b7" stroke="none"/><circle cx="29" cy="160" r="9" fill="#71e9b7" stroke="none"/>
+    <path d="M137 254v35M95 289h84" stroke="#65b9d3" stroke-width="6"/>
+  </g>
+</svg>
