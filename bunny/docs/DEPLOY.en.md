@@ -1,3 +1,10 @@
+# Lampac Bunny — deploy to bunny.net (EN)
+
+Lampac Bunny is a **standalone Lampac backend**. It does not depend on Lampa Multilingual Edition and can serve any compatible client. Only connect to content sources you are entitled to use.
+
+> **Status:** source adapter and offline checks prepared; live Bunny deployment, content providers, playback and volume restoration **not yet verified**. Do not expose this app unprotected in production.
+
+
 ## Fix a read-only Docker Desktop disk
 
 The provided build log failed **inside Docker Desktop storage**, not GitHub or NuGet: `dpkg: Input/output error`, `NuGet: Read-only file system`, then `metadata_v2.db: read-only file system`.
@@ -16,12 +23,6 @@ bash bunny/scripts/build-image.sh ghcr.io/vbrekher/lampac-bunny:v0.1.1 --load
 ```
 
 The new `bunny/Dockerfile` is a **LIGHT profile**: it compiles Lampac source against official .NET 10 images but does **not install** Chromium, GStreamer or FFmpeg. The starter configuration disables the related modules. Do not enable them through a JSON override; a separately tested enhanced image is required. A persistent read-only VM after restart and sufficient space needs Docker disk investigation while preserving volumes, not a blind reset.
-
-# Lampac Bunny — deploy to bunny.net (EN)
-
-Lampac Bunny is a **standalone Lampac backend**. It does not depend on Lampa Multilingual Edition and can serve any compatible client. Only connect to content sources you are entitled to use.
-
-> **Status:** source adapter and offline checks prepared; live Bunny deployment, content providers, playback and volume restoration **not yet verified**. Do not expose this app unprotected in production.
 
 ## 1. Build locally
 
