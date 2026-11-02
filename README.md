@@ -2,7 +2,7 @@
 
 <h1 align="center">Lampac Bunny</h1>
 <p align="center"><strong>Lampac NextGen. Your own backend. Powered by Bunny Magic Containers.</strong></p>
-<p align="center">A self-hosted, independent Lampac NextGen deployment for Bunny — with a reproducible Docker build, a guarded startup configuration, persistent volume support and clear multilingual guides.</p>
+<p align="center">A self-hosted, independent Lampac NextGen deployment for Bunny — with a source-based Docker build, a guarded startup configuration, persistent volume support and clear multilingual guides.</p>
 
 <p align="center">
   <a href="bunny/docs/DEPLOY.en.md">English</a> ·
