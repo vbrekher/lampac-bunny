@@ -69,13 +69,14 @@ bash bunny/scripts/preflight.sh
 bash bunny/scripts/build-image.sh ghcr.io/vbrekher/lampac-bunny:v0.1.1 --load
 ```
 
-For local testing, set a strong password and run:
+For local testing, set a strong password and use the fail-closed local acceptance script (a failed build will **not** misleadingly report completion):
 
 ```bash
 export LAMPAC_ROOT_PASSWORD="$(openssl rand -hex 24)"
-docker compose -f bunny/compose.yaml up --build -d
-curl -fsS 'http://127.0.0.1:9118/version?type=hash'
+bash bunny/scripts/local-acceptance.sh
 ```
+
+The image runs as the built-in non-root `app` user supplied by the .NET 10 base, avoiding Ubuntu's existing GID 1000. The script stops on the first failure and shows container logs.
 
 To publish to your own GHCR after authentication:
 

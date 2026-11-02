@@ -53,5 +53,13 @@ grep -Fqx -- '!bunny/docker-entrypoint.sh' "$ROOT_DIR/.dockerignore" || { echo '
 grep -Fqx -- '!bunny/config/init.conf' "$ROOT_DIR/.dockerignore" || { echo 'Bunny config excluded from build context' >&2; exit 1; }
 grep -Fqx -- 'ARG SDK_IMAGE=mcr.microsoft.com/dotnet/sdk:10.0' "$ROOT_DIR/bunny/Dockerfile" || { echo 'Expected .NET SDK base is missing' >&2; exit 1; }
 grep -Fqx -- 'ARG RUNTIME_IMAGE=mcr.microsoft.com/dotnet/aspnet:10.0' "$ROOT_DIR/bunny/Dockerfile" || { echo 'Expected ASP.NET runtime base is missing' >&2; exit 1; }
+# Official .NET 10 base includes 'app'. Ubuntu GID 1000 is already occupied.
+grep -Fqx -- 'USER $APP_UID' "$ROOT_DIR/bunny/Dockerfile" || { echo 'Dockerfile must use the built-in .NET app user' >&2; exit 1; }
+grep -Fq -- 'chown -R app:app /lampac /opt/lampac-bunny' "$ROOT_DIR/bunny/Dockerfile" || { echo 'Expected app-owned directories are missing' >&2; exit 1; }
+if grep -Eq 'groupadd[[:space:]]+--gid[= ]1000|useradd[[:space:]]+--uid[= ]1000' "$ROOT_DIR/bunny/Dockerfile"; then
+  echo 'Dockerfile must not create UID/GID 1000 on Ubuntu-based .NET images' >&2
+  exit 1
+fi
+printf 'PASS: non-root identity without Ubuntu UID/GID collision\n'
 printf 'PASS: Dockerfile and build context static audit\n'
 printf 'LAMPAC_BUNNY_PREFLIGHT_PASS\n'

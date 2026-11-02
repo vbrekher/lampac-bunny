@@ -24,6 +24,8 @@ bash bunny/scripts/build-image.sh ghcr.io/vbrekher/lampac-bunny:v0.1.1 --load
 
 The new `bunny/Dockerfile` is a **LIGHT profile**: it compiles Lampac source against official .NET 10 images but does **not install** Chromium, GStreamer or FFmpeg. The starter configuration disables the related modules. Do not enable them through a JSON override; a separately tested enhanced image is required. A persistent read-only VM after restart and sufficient space needs Docker disk investigation while preserving volumes, not a blind reset.
 
+**v0.1.1 container-user correction:** the .NET 10 base uses Ubuntu, where GID 1000 already exists. The Dockerfile uses the pre-existing non-root `app` user instead of creating a conflicting `lampac` group. Run `bash bunny/scripts/local-acceptance.sh` for fail-closed local build and smoke tests (no false success after build errors).
+
 ## 1. Build locally
 
 Requires Docker with buildx, Bash and Git; `jq` is needed for offline preflight.

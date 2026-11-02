@@ -24,6 +24,8 @@ bash bunny/scripts/build-image.sh ghcr.io/vbrekher/lampac-bunny:v0.1.1 --load
 
 De nieuwe `bunny/Dockerfile` bouwt een **LIGHT-image** op basis van de volledige Lampac-broncode en officiële .NET 10-images, maar bevat **geen** Chromium, GStreamer of FFmpeg. Deze modules zijn in de standaardconfiguratie uitgeschakeld. Schakel ze niet in met een JSON-override; een afzonderlijk geteste uitgebreide image is nodig. Blijft de VM na een herstart read-only, onderzoek de Docker-schijf zonder volumes zomaar te wissen.
 
+**v0.1.1 oplossing voor de containergebruiker:** Ubuntu in de .NET 10-basisimage heeft al een groep met GID 1000. De Dockerfile gebruikt daarom de bestaande niet-rootgebruiker `app` in plaats van een conflicterende groep te maken. Voer `bash bunny/scripts/local-acceptance.sh` uit voor een lokale test die direct stopt bij een bouwfout.
+
 ## 1. Zelf de Docker-image bouwen
 
 Benodigd: Git, Bash, Docker met buildx en `jq` voor de offline controle.
