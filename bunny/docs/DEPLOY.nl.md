@@ -1,3 +1,10 @@
+# Lampac Bunny — installeren op bunny.net (NL)
+
+Lampac Bunny is een **zelfstandige Lampac-backend**. Het project is niet afhankelijk van Lampa Multilingual Edition en kan door elke geschikte client worden gebruikt. Gebruik uitsluitend mediabronnen waarvoor je toestemming hebt.
+
+> **Status:** de broncode en offline controles zijn voorbereid. Een echte Bunny-deployment, de werking van mediabronnen, afspelen en gegevensherstel zijn **nog niet gevalideerd**. Stel de server niet onbeschermd bloot aan het internet.
+
+
 ## Read-only-bestandssysteem van Docker Desktop herstellen
 
 In het aangeleverde logboek trad de fout op in de **opslag van Docker Desktop**, niet bij GitHub of NuGet: `dpkg: Input/output error`, `NuGet: Read-only file system`, daarna `metadata_v2.db: read-only file system`.
@@ -16,12 +23,6 @@ bash bunny/scripts/build-image.sh ghcr.io/vbrekher/lampac-bunny:v0.1.1 --load
 ```
 
 De nieuwe `bunny/Dockerfile` bouwt een **LIGHT-image** op basis van de volledige Lampac-broncode en officiële .NET 10-images, maar bevat **geen** Chromium, GStreamer of FFmpeg. Deze modules zijn in de standaardconfiguratie uitgeschakeld. Schakel ze niet in met een JSON-override; een afzonderlijk geteste uitgebreide image is nodig. Blijft de VM na een herstart read-only, onderzoek de Docker-schijf zonder volumes zomaar te wissen.
-
-# Lampac Bunny — installeren op bunny.net (NL)
-
-Lampac Bunny is een **zelfstandige Lampac-backend**. Het project is niet afhankelijk van Lampa Multilingual Edition en kan door elke geschikte client worden gebruikt. Gebruik uitsluitend mediabronnen waarvoor je toestemming hebt.
-
-> **Status:** de broncode en offline controles zijn voorbereid. Een echte Bunny-deployment, de werking van mediabronnen, afspelen en gegevensherstel zijn **nog niet gevalideerd**. Stel de server niet onbeschermd bloot aan het internet.
 
 ## 1. Zelf de Docker-image bouwen
 
