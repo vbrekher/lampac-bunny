@@ -30,11 +30,11 @@
 | Feature | What Lampac Bunny adds |
 | --- | --- |
 | **Full Lampac core** | Existing .NET 10 application and modules preserved, compiled from this fork's source |
-| **Bunny container build** | Dedicated `bunny/Dockerfile` for `linux/amd64`, retaining the original `Dockerfile` |
+| **Bunny container build** | Lightweight, source-built `bunny/Dockerfile` for `linux/amd64`, retaining the original `Dockerfile` |
 | **Secure boot** | Required 16+ character root secret, config validation, non-root upstream runtime, no default password |
 | **Persistent data** | Separate mount paths for SQLite (`/lampac/database`) and cache (`/lampac/cache`) |
 | **Client integration** | Native `/online.js` plugin and HTTP API; compatible clients connect independently |
-| **Opt-in power** | TorrServer, JacRed, Sync, TimeCode, GStreamer and other modules remain in code but are disabled in the safe-start preset |
+| **Optional modules** | TorrServer, JacRed, Sync and TimeCode remain in source but start disabled; Chromium/GStreamer/FFmpeg tools are absent from the LIGHT image |
 | **Operations** | Bootstrap preflight, endpoint smoke script, local Compose and RU/EN/NL deployment guides |
 
 ## How it works
@@ -50,14 +50,23 @@ Any compatible client  ──HTTPS──>  Bunny CDN endpoint
 
 **Bunny Database is not a drop-in replacement** for Lampac's SQLite. This edition deliberately leaves database migration out of its first release rather than claiming unsupported integration. Edge Scripting is not required to run Lampac.
 
+## Docker Desktop storage recovery
+
+The reported `metadata_v2.db: read-only file system`, NuGet write failure and `dpkg: Input/output error` mean **Docker Desktop's Linux VM could not write to its disk**. Restore host/VM disk health before rebuilding; this cannot be repaired by a source-code change alone.
+
+Run `bash bunny/scripts/doctor.sh` (read-only), restart Docker Desktop, and check **Settings → Resources → Advanced** for the disk image size. You may optionally remove **unused** builder cache with interactive `docker builder prune` after Docker is writable. Do **not** blindly reset Docker or run `docker system prune --volumes`.
+
+**New default: LIGHT source build** using official .NET 10 SDK/runtime images. It intentionally excludes Chromium, GStreamer and FFmpeg: the starter config disables those modules. Full multimedia tools require a separate image and real validation. Details: [Русский](bunny/docs/DEPLOY.ru.md) · [English](bunny/docs/DEPLOY.en.md) · [Nederlands](bunny/docs/DEPLOY.nl.md).
+
 ## Quick start
 
 ```bash
 git clone https://github.com/vbrekher/lampac-bunny.git
 cd lampac-bunny
+bash bunny/scripts/doctor.sh
 bash bunny/scripts/preflight.sh
 # Build a full linux/amd64 Docker image from this repository:
-bash bunny/scripts/build-image.sh ghcr.io/vbrekher/lampac-bunny:v0.1.0 --load
+bash bunny/scripts/build-image.sh ghcr.io/vbrekher/lampac-bunny:v0.1.1 --load
 ```
 
 For local testing, set a strong password and run:
@@ -71,7 +80,7 @@ curl -fsS 'http://127.0.0.1:9118/version?type=hash'
 To publish to your own GHCR after authentication:
 
 ```bash
-bash bunny/scripts/build-image.sh ghcr.io/vbrekher/lampac-bunny:v0.1.0 --push
+bash bunny/scripts/build-image.sh ghcr.io/vbrekher/lampac-bunny:v0.1.1 --push
 ```
 
 Then create a **Bunny Magic Containers** application using that image, a **CDN endpoint on port 9118**, one replica/region, the required `LAMPAC_ROOT_PASSWORD` variable and a persistent volume mounted to `/lampac/database`.

@@ -1,3 +1,22 @@
+## Fix a read-only Docker Desktop disk
+
+The provided build log failed **inside Docker Desktop storage**, not GitHub or NuGet: `dpkg: Input/output error`, `NuGet: Read-only file system`, then `metadata_v2.db: read-only file system`.
+
+1. **Restart Docker Desktop** without Factory Reset or deleting other projects' volumes.
+2. Run `bash bunny/scripts/doctor.sh` (read-only diagnostics).
+3. Check Mac free space and **Docker Desktop → Settings → Resources → Advanced**. Increase or relocate the VM disk through Docker Desktop itself, not Finder.
+4. Once Docker is healthy, you may interactively run `docker builder prune` to discard **unused build caches** if acceptable. Do **not** run `docker system prune --volumes`.
+5. Rebuild after updating the repository:
+
+```bash
+git pull --ff-only
+bash bunny/scripts/doctor.sh
+bash bunny/scripts/preflight.sh
+bash bunny/scripts/build-image.sh ghcr.io/vbrekher/lampac-bunny:v0.1.1 --load
+```
+
+The new `bunny/Dockerfile` is a **LIGHT profile**: it compiles Lampac source against official .NET 10 images but does **not install** Chromium, GStreamer or FFmpeg. The starter configuration disables the related modules. Do not enable them through a JSON override; a separately tested enhanced image is required. A persistent read-only VM after restart and sufficient space needs Docker disk investigation while preserving volumes, not a blind reset.
+
 # Lampac Bunny — deploy to bunny.net (EN)
 
 Lampac Bunny is a **standalone Lampac backend**. It does not depend on Lampa Multilingual Edition and can serve any compatible client. Only connect to content sources you are entitled to use.
@@ -12,9 +31,9 @@ Requires Docker with buildx, Bash and Git; `jq` is needed for offline preflight.
 git clone https://github.com/vbrekher/lampac-bunny.git
 cd lampac-bunny
 bash bunny/scripts/preflight.sh
-bash bunny/scripts/build-image.sh ghcr.io/vbrekher/lampac-bunny:v0.1.0 --load
+bash bunny/scripts/build-image.sh ghcr.io/vbrekher/lampac-bunny:v0.1.1 --load
 # To publish after docker login ghcr.io:
-bash bunny/scripts/build-image.sh ghcr.io/vbrekher/lampac-bunny:v0.1.0 --push
+bash bunny/scripts/build-image.sh ghcr.io/vbrekher/lampac-bunny:v0.1.1 --push
 ```
 
 `--load` builds a local image; `--push` publishes it to your registry. The Dockerfile builds this fork's .NET source; it does not simply wrap an upstream binary. Expect a large image and a resource-intensive build due to browser and media dependencies.
@@ -33,7 +52,7 @@ Keep the password out of Git and public logs.
 
 Open [Bunny Dashboard](https://dash.bunny.net/) → **Magic Containers → Add App**:
 
-1. Select your published **linux/amd64** image `ghcr.io/vbrekher/lampac-bunny:v0.1.0`; connect GHCR first if the image is private.
+1. Select your published **linux/amd64** image `ghcr.io/vbrekher/lampac-bunny:v0.1.1`; connect GHCR first if the image is private.
 2. Create **one CDN endpoint** forwarding to container port **9118**. TLS terminates at Bunny; Lampac listens on HTTP internally.
 3. Attach a persistent volume at `/lampac/database` (for example, 5 GB). A second optional volume can go to `/lampac/cache` (for example, 2 GB). Trial accounts support only one volume.
 4. Add `LAMPAC_ROOT_PASSWORD` in Environment Variables (unique, at least 16 characters).

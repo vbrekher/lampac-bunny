@@ -1,3 +1,22 @@
+## Read-only-bestandssysteem van Docker Desktop herstellen
+
+In het aangeleverde logboek trad de fout op in de **opslag van Docker Desktop**, niet bij GitHub of NuGet: `dpkg: Input/output error`, `NuGet: Read-only file system`, daarna `metadata_v2.db: read-only file system`.
+
+1. **Start Docker Desktop opnieuw**, zonder Factory Reset of volumes van andere projecten te wissen.
+2. Voer `bash bunny/scripts/doctor.sh` uit (diagnose, verwijdert niets).
+3. Controleer de vrije ruimte op uw Mac en ga naar **Docker Desktop → Settings → Resources → Advanced**. Vergroot of verplaats de virtuele schijf via Docker Desktop, niet via Finder.
+4. Wanneer Docker weer werkt, kunt u eventueel `docker builder prune` interactief uitvoeren om **ongebruikte buildcaches** te verwijderen. Voer **niet** `docker system prune --volumes` uit.
+5. Bouw opnieuw nadat u de repository hebt bijgewerkt:
+
+```bash
+git pull --ff-only
+bash bunny/scripts/doctor.sh
+bash bunny/scripts/preflight.sh
+bash bunny/scripts/build-image.sh ghcr.io/vbrekher/lampac-bunny:v0.1.1 --load
+```
+
+De nieuwe `bunny/Dockerfile` bouwt een **LIGHT-image** op basis van de volledige Lampac-broncode en officiële .NET 10-images, maar bevat **geen** Chromium, GStreamer of FFmpeg. Deze modules zijn in de standaardconfiguratie uitgeschakeld. Schakel ze niet in met een JSON-override; een afzonderlijk geteste uitgebreide image is nodig. Blijft de VM na een herstart read-only, onderzoek de Docker-schijf zonder volumes zomaar te wissen.
+
 # Lampac Bunny — installeren op bunny.net (NL)
 
 Lampac Bunny is een **zelfstandige Lampac-backend**. Het project is niet afhankelijk van Lampa Multilingual Edition en kan door elke geschikte client worden gebruikt. Gebruik uitsluitend mediabronnen waarvoor je toestemming hebt.
@@ -12,9 +31,9 @@ Benodigd: Git, Bash, Docker met buildx en `jq` voor de offline controle.
 git clone https://github.com/vbrekher/lampac-bunny.git
 cd lampac-bunny
 bash bunny/scripts/preflight.sh
-bash bunny/scripts/build-image.sh ghcr.io/vbrekher/lampac-bunny:v0.1.0 --load
+bash bunny/scripts/build-image.sh ghcr.io/vbrekher/lampac-bunny:v0.1.1 --load
 # Publiceren na docker login ghcr.io:
-bash bunny/scripts/build-image.sh ghcr.io/vbrekher/lampac-bunny:v0.1.0 --push
+bash bunny/scripts/build-image.sh ghcr.io/vbrekher/lampac-bunny:v0.1.1 --push
 ```
 
 Met `--load` blijft de image lokaal; `--push` publiceert deze in de containerregistry. De image wordt gebouwd uit de .NET-broncode van deze fork. Vanwege de browser- en mediaonderdelen kan de build veel schijfruimte gebruiken.
@@ -33,7 +52,7 @@ Zet wachtwoorden nooit in Git of openbare logs.
 
 Open [Bunny Dashboard](https://dash.bunny.net/) → **Magic Containers → Add App**:
 
-1. Selecteer de gepubliceerde **linux/amd64** image `ghcr.io/vbrekher/lampac-bunny:v0.1.0`. Koppel GHCR als deze privé is.
+1. Selecteer de gepubliceerde **linux/amd64** image `ghcr.io/vbrekher/lampac-bunny:v0.1.1`. Koppel GHCR als deze privé is.
 2. Maak **één CDN-endpoint** aan met containerpoort **9118**. Het externe adres gebruikt HTTPS; binnen de container draait HTTP.
 3. Voeg een persistent volume toe met pad `/lampac/database` (bijvoorbeeld 5 GB). Een tweede volume `/lampac/cache` is optioneel (bijvoorbeeld 2 GB). Een proefaccount ondersteunt slechts één volume.
 4. Stel de omgevingsvariabele `LAMPAC_ROOT_PASSWORD` in op een uniek geheim van minimaal 16 tekens.

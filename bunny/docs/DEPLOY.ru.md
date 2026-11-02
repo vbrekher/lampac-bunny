@@ -1,3 +1,22 @@
+## Если Docker Desktop стал read-only
+
+В присланном логе сбой произошёл **в файловой системе Docker Desktop**, а не из-за GitHub или NuGet: `dpkg: Input/output error`, `NuGet: Read-only file system`, затем `metadata_v2.db: read-only file system`.
+
+1. **Перезапустите Docker Desktop**, не выполняя Factory Reset и не удаляя тома других проектов.
+2. Выполните `bash bunny/scripts/doctor.sh` (только диагностика, ничего не удаляется).
+3. Проверьте свободное место Mac и **Docker Desktop → Settings → Resources → Advanced**. Увеличьте лимит виртуального диска или перенесите его через интерфейс Docker, но не через Finder.
+4. Если Docker снова работает, ненужный кеш сборок можно удалить командой `docker builder prune` (интерактивно, только с пониманием последствий). **Не запускайте** `docker system prune --volumes`.
+5. Повторите сборку после обновления репозитория:
+
+```bash
+git pull --ff-only
+bash bunny/scripts/doctor.sh
+bash bunny/scripts/preflight.sh
+bash bunny/scripts/build-image.sh ghcr.io/vbrekher/lampac-bunny:v0.1.1 --load
+```
+
+Образ `bunny/Dockerfile` теперь **облегчённый**: исходники Lampac собираются на официальном .NET 10 SDK, но Chromium, GStreamer и FFmpeg **не установлены**. Соответствующие модули выключены стартовой конфигурацией; не включайте их через JSON override. Для них потребуется отдельный протестированный образ. При сохраняющейся ошибке read-only даже после перезагрузки и проверки места нужен анализ виртуального диска Docker с сохранением данных, а не сброс наугад.
+
 # Lampac Bunny — установка на bunny.net (RU)
 
 Это **самостоятельный сервер Lampac**, не связанный с Lampa Multilingual Edition. Он может обслуживать любой совместимый клиент. Использование сторонних источников контента регулируется их условиями и применимым законодательством.
@@ -13,9 +32,9 @@ git clone https://github.com/vbrekher/lampac-bunny.git
 cd lampac-bunny
 bash bunny/scripts/preflight.sh
 # Собрать собственный образ из исходников ЭТОГО репозитория:
-bash bunny/scripts/build-image.sh ghcr.io/vbrekher/lampac-bunny:v0.1.0 --load
+bash bunny/scripts/build-image.sh ghcr.io/vbrekher/lampac-bunny:v0.1.1 --load
 # Или опубликовать образ в GHCR после docker login ghcr.io:
-bash bunny/scripts/build-image.sh ghcr.io/vbrekher/lampac-bunny:v0.1.0 --push
+bash bunny/scripts/build-image.sh ghcr.io/vbrekher/lampac-bunny:v0.1.1 --push
 ```
 
 `--load` сохраняет образ только локально; `--push` требует права записи в выбранный реестр. Dockerfile собирает `.NET 10` исходники самого форка. Сборка тяжёлая: для GStreamer/Chromium/FFmpeg понадобится много свободного места.
@@ -34,7 +53,7 @@ curl -fsS 'http://127.0.0.1:9118/version?type=hash'
 
 Откройте [Bunny Dashboard](https://dash.bunny.net/) → **Magic Containers → Add App**:
 
-1. Укажите опубликованный **linux/amd64** образ `ghcr.io/vbrekher/lampac-bunny:v0.1.0` (или собственный путь). Приватный GHCR требует подключения реестра.
+1. Укажите опубликованный **linux/amd64** образ `ghcr.io/vbrekher/lampac-bunny:v0.1.1` (или собственный путь). Приватный GHCR требует подключения реестра.
 2. Создайте **один CDN endpoint**, укажите порт контейнера **9118**. Внешнее подключение будет HTTPS, внутри контейнера HTTP.
 3. Создайте persistent volume с mount path `/lampac/database` (например 5 GB). Второй опциональный том `/lampac/cache` (например 2 GB). В trial-аккаунте доступен только один том.
 4. В переменных окружения укажите `LAMPAC_ROOT_PASSWORD` с уникальным длинным значением (не менее 16 символов). Не используйте дефолтные пароли.
