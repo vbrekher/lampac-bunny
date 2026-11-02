@@ -16,7 +16,8 @@ export LAMPAC_BUNNY_HOME="$work/lampac" LAMPAC_BUNNY_TEMPLATE="$template"
 export LAMPAC_ROOT_PASSWORD='local-test-only-strong-passphrase'
 sh "$entry" --configure-only >/dev/null
 [ -s "$work/lampac/init.conf" ] && [ -s "$work/lampac/passwd" ]
-[ "$(stat -c %a "$work/lampac/passwd")" = 600 ]
+mode=$(stat -c %a "$work/lampac/passwd" 2>/dev/null || stat -f %Lp "$work/lampac/passwd")
+[ "$mode" = 600 ]
 [ "$(jq -r '.listen.port' "$work/lampac/init.conf")" = 9118 ]
 printf 'PASS: default bootstrap\n'
 
