@@ -69,7 +69,15 @@ class BunnyAPI:
         try:
             with NO_REDIRECT_OPENER.open(req, timeout=35) as res:
                 raw = res.read(2_000_000)
-                return json.loads(raw) if raw else {}
+                if not raw:
+                    return {}
+                try:
+                    return json.loads(raw)
+                except (UnicodeError, ValueError):
+                    # Deploy endpoint may return a plain success message on HTTP 200.
+                    if method == "POST" and path.endswith("/deploy"):
+                        return {}
+                    raise InstallerError("Unexpected non-JSON Bunny API response")
         except error.HTTPError as exc:
             if exc.code in (401, 403):
                 raise InstallerError(
@@ -335,7 +343,10 @@ def install(api: BunnyAPI, *, region: str | None, state_path: Path = STATE_FILE,
         full = api.call("GET", "/apps/" + parse.quote(app_id, safe=""))
         validate_existing(full)
         print("Existing Lampac Bunny found; no duplicate will be created.")
-        should_deploy = bool(saved and saved.get("deployed") is False)
+        should_deploy = bool(
+            (saved and saved.get("deployed") is False)
+            or full.get("status") in ("inactive", "failing", "unknown")
+        )
     else:
         chosen = select_region(api.items("/regions?limit=100"), region)
         print(f"Region: {chosen.get('name') or chosen['id']} ({chosen['id']})")
