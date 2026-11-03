@@ -269,11 +269,12 @@ def create_payload(region_id: str, registry_id: str, password: str) -> dict:
         },
         "containerTemplates": [{
             "name": CONTAINER_NAME,
+            "image": IMAGE,
             "imageName": "lampac-bunny",
             "imageNamespace": "vbrekher",
             "imageTag": "v0.1.1",
             "imageRegistryId": registry_id,
-            "imagePullPolicy": "ifNotPresent",
+            "imagePullPolicy": "always",
             "environmentVariables": [{"name": "LAMPAC_ROOT_PASSWORD", "value": password}],
             "endpoints": [{
                 "displayName": "lampac-http",
