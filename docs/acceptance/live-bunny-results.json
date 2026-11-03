@@ -1,0 +1,180 @@
+{
+  "LIVE_DEPLOYMENT_VERIFIED": false,
+  "LIVE_ACCEPTANCE": "BLOCKED",
+  "tested_at_utc": "2026-11-03T21:46:50.957538+00:00",
+  "tested_source_commit": "c2eb9c9d2f8d10f9286a7700e1858a341183d96e",
+  "base_commit": "8deb82073b019b7b138b070519bd14ff0d0c6b23",
+  "image": {
+    "reference": "ghcr.io/vbrekher/lampac-bunny:v0.1.1",
+    "expected_digest": "sha256:ec518a9170c5f4b4373545851f2325f285ee0daa26af6cd4ffa5819200b12adc",
+    "observed_digest": null,
+    "expected_platform": "linux/amd64"
+  },
+  "deployment": {
+    "app_id": null,
+    "url": null,
+    "region": null,
+    "candidate_region": "AMS",
+    "resources_created": false,
+    "existing_resources_modified": false,
+    "planned_replicas": 1,
+    "planned_volume_gb": 5,
+    "planned_port": 9118
+  },
+  "checks": {
+    "bunny_auth": {
+      "status": "PASS",
+      "detail": "Authenticated GET /mc/apps completed"
+    },
+    "eu_capacity": {
+      "status": "PASS",
+      "region": "AMS",
+      "detail": "Authenticated region list reports capacity"
+    },
+    "wrong_api_key": {
+      "status": "PASS",
+      "detail": "Bunny API: HTTP 401. Check your account API Key and Magic Containers permissions."
+    },
+    "installer_attempt_1": {
+      "status": "BLOCKED",
+      "detail": "GHCR image is not publicly pullable. In GitHub Packages \u2192 lampac-bunny \u2192 Package settings, change visibility to Public, then retry."
+    },
+    "installer_attempt_2": {
+      "status": "BLOCKED",
+      "detail": "GHCR image is not publicly pullable. In GitHub Packages \u2192 lampac-bunny \u2192 Package settings, change visibility to Public, then retry."
+    },
+    "no_resources_on_preflight_failure": {
+      "status": "PASS",
+      "detail": "Matching app count before=0, after=0; two installer attempts"
+    },
+    "anonymous_ghcr_pull": {
+      "status": "FAIL",
+      "http_status": 401,
+      "detail": "Anonymous GHCR token request rejected. Private/missing package or access policy cannot be distinguished with current permissions."
+    },
+    "image_digest": {
+      "status": "BLOCKED",
+      "detail": "No deployment: required public image failed anonymous GHCR preflight."
+    },
+    "image_architecture": {
+      "status": "BLOCKED",
+      "detail": "No deployment: required public image failed anonymous GHCR preflight."
+    },
+    "container_deployment": {
+      "status": "BLOCKED",
+      "detail": "No deployment: required public image failed anonymous GHCR preflight."
+    },
+    "container_running_healthy": {
+      "status": "BLOCKED",
+      "detail": "No deployment: required public image failed anonymous GHCR preflight."
+    },
+    "https_tls": {
+      "status": "BLOCKED",
+      "detail": "No deployment: required public image failed anonymous GHCR preflight."
+    },
+    "version_http": {
+      "status": "BLOCKED",
+      "detail": "No deployment: required public image failed anonymous GHCR preflight."
+    },
+    "online_js_http_and_syntax": {
+      "status": "BLOCKED",
+      "detail": "No deployment: required public image failed anonymous GHCR preflight."
+    },
+    "startup_readiness_liveness": {
+      "status": "BLOCKED",
+      "detail": "No deployment: required public image failed anonymous GHCR preflight."
+    },
+    "restart_recovery": {
+      "status": "BLOCKED",
+      "detail": "No deployment: required public image failed anonymous GHCR preflight."
+    },
+    "sqlite_persistence": {
+      "status": "BLOCKED",
+      "detail": "No deployment: required public image failed anonymous GHCR preflight."
+    },
+    "repeat_installation_existing_deployment": {
+      "status": "BLOCKED",
+      "detail": "No deployment: required public image failed anonymous GHCR preflight."
+    },
+    "unauthorized_admin_access": {
+      "status": "BLOCKED",
+      "detail": "No deployment: required public image failed anonymous GHCR preflight."
+    },
+    "unrestricted_proxy_protection": {
+      "status": "BLOCKED",
+      "detail": "No deployment: required public image failed anonymous GHCR preflight."
+    },
+    "dotnet_logs": {
+      "status": "BLOCKED",
+      "detail": "No deployment: required public image failed anonymous GHCR preflight."
+    },
+    "catalogs": {
+      "status": "NOT_TESTED",
+      "detail": "No running test application; no client or media playback evidence."
+    },
+    "lampa_client_compatibility": {
+      "status": "NOT_TESTED",
+      "detail": "No running test application; no client or media playback evidence."
+    },
+    "permitted_media_playback": {
+      "status": "NOT_TESTED",
+      "detail": "No running test application; no client or media playback evidence."
+    },
+    "unexpected_process_crash_recovery": {
+      "status": "NOT_TESTED",
+      "detail": "No running test application; no client or media playback evidence."
+    },
+    "shell_installer": {
+      "status": "BLOCKED",
+      "exit_code": 1,
+      "detail": "Actual Bash installer with saved credentials failed closed at public GHCR preflight."
+    }
+  },
+  "offline_validation": {
+    "scope": "Local/mock tests only; these are not live acceptance PASS results",
+    "preflight": "passed",
+    "installer_tests": {
+      "result": "passed",
+      "count": 16
+    },
+    "local_acceptance_regression": "passed",
+    "shell_syntax": "passed",
+    "python_syntax": "passed",
+    "agent_metadata": "passed",
+    "changed_file_secret_scan": "passed",
+    "git_diff_check": "passed",
+    "openapi": "Official v1.11.1.0 contract reviewed; provisioning contract not exercised because GHCR blocked"
+  },
+  "links": [
+    {
+      "url": "https://github.com/vbrekher/lampa-multilingual-edition",
+      "http_status": 200
+    },
+    {
+      "url": "https://github.com/vbrekher/TorrServer-bunny",
+      "http_status": 200
+    },
+    {
+      "url": "https://github.com/vbrekher/iptv",
+      "http_status": 200
+    },
+    {
+      "url": "https://github.com/vbrekher?tab=repositories",
+      "http_status": 200
+    },
+    {
+      "url": "https://bunny.net/docs/magic-containers/deploy",
+      "http_status": 200
+    },
+    {
+      "url": "https://bunny.net/docs/magic-containers/persistent-volumes",
+      "http_status": 200
+    },
+    {
+      "url": "https://docs.lampac.dev/",
+      "error": "HTTP Error 403: Forbidden"
+    }
+  ],
+  "blocking_owner_action": "Make the expected GHCR package and v0.1.1 image anonymously pullable; verify tag availability. Current GitHub CLI credentials lack read:packages; no package visibility change was performed.",
+  "merge_policy": "PR remains unmerged until required live acceptance checks pass."
+}
