@@ -1,5 +1,20 @@
 # Lampac Bunny — deploy to bunny.net (EN)
 
+## Automatic installation — one command
+
+Paste this into a macOS or Linux terminal:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/vbrekher/lampac-bunny/main/bunny/scripts/install-bunny.sh | bash
+```
+
+Enter your **Bunny account API Key** at the hidden prompt (Bunny Dashboard → Account → API). No Docker or GitHub token is required. The installer verifies the public GHCR image digest and linux/amd64 platform, chooses an available European region (NL first), connects the registry, creates one instance, one **5 GB** SQLite volume at `/lampac/database`, the HTTPS CDN endpoint for port `9118`, a unique root password, and deploys. It reports success only after live HTTP 200 responses from both health and plugin routes.
+
+The GitHub Packages image must be **Public** to deploy using only a Bunny key. If private, the installer stops before creating resources. The Bunny API Key is never stored. The app's generated password is saved locally to `~/.config/lampac-bunny/deployment.json` with mode 0600. Repeat runs reuse the matching app.
+
+Bunny compute, CDN and storage can incur charges. The generated CDN URL is public; apply access controls before sharing. HTTP smoke tests do not certify content availability or playback.
+
+
 Lampac Bunny is a **standalone Lampac backend**. It does not depend on Lampa Multilingual Edition and can serve any compatible client. Only connect to content sources you are entitled to use.
 
 > **Status:** source adapter and offline checks prepared; live Bunny deployment, content providers, playback and volume restoration **not yet verified**. Do not expose this app unprotected in production.

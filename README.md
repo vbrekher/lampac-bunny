@@ -25,6 +25,22 @@
 > [!WARNING]
 > **Source preview, not a certified live deployment.** The Bunny adapter can be tested locally; physical media playback, provider availability, persistent-volume restore and production deployment require real acceptance. A public CDN endpoint is not an authentication boundary.
 
+## One-command deploy to Bunny Magic Containers
+
+**No Docker, SSH, GitHub account, or local build required for users.** Install from a terminal:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/vbrekher/lampac-bunny/main/bunny/scripts/install-bunny.sh | bash
+```
+
+Paste your **bunny.net account API Key** at the hidden prompt (Bunny Dashboard → Account → API). The installer never sends the key anywhere other than Bunny's API or saves it. It checks the public GHCR image digest, reuses or creates your GHCR registry, picks an available EU region (NL first), creates **one** shared runtime instance, **one** 5 GB persistent database volume, an HTTPS CDN endpoint on container port **9118**, a unique root password and readiness checks, then deploys. It checks both `/version?type=hash` and `/online.js` before reporting success.
+
+**Public GHCR required:** GitHub Packages → `lampac-bunny` → Package settings → Change visibility → Public. A private package cannot be pulled with only a Bunny key. The installer checks this **before** creating billable resources.
+
+**Billing / security:** Bunny Magic Containers, volumes and CDN are paid resources; your account must allow provisioning. The CDN endpoint is public; restrict access and review admin/API exposure before sharing it. The generated root password is saved only on your machine at `~/.config/lampac-bunny/deployment.json` (mode 0600). No Bunny API Key is stored. Re-running will reuse a matching app, not create duplicates. Set a specific region by running the installer from a checkout with `--region DE`.
+
+Deployment is **not yet live-certified** until a user completes real Bunny acceptance. See [Русский](bunny/docs/DEPLOY.ru.md), [English](bunny/docs/DEPLOY.en.md), [Nederlands](bunny/docs/DEPLOY.nl.md).
+
 ## What is included?
 
 | Feature | What Lampac Bunny adds |
