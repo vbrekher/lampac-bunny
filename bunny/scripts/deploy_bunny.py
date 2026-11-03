@@ -213,7 +213,7 @@ def select_region(regions: list, override: str | None = None) -> dict:
 
 
 def find_app(api: BunnyAPI) -> dict | None:
-    found = [a for a in api.items("/apps?limit=100") if a.get("name") == APP_NAME]
+    found = [a for a in api.items("/apps?limit=100") if str(a.get("name", "")).casefold() == APP_NAME.casefold()]
     if len(found) > 1:
         raise InstallerError("Multiple apps named lampac-bunny already exist; refusing an ambiguous change")
     return found[0] if found else None
@@ -344,6 +344,8 @@ def install(api: BunnyAPI, *, region: str | None, state_path: Path = STATE_FILE,
         full = api.call("GET", "/apps/" + parse.quote(app_id, safe=""))
         validate_existing(full)
         print("Existing Lampac Bunny found; no duplicate will be created.")
+        if not saved:
+            print("Note: this computer has no saved admin password for the existing app.")
         should_deploy = bool(
             (saved and saved.get("deployed") is False)
             or full.get("status") in ("inactive", "failing", "unknown")
@@ -408,7 +410,13 @@ def main() -> int:
     )
     parser.add_argument("--region", help="Bunny region ID; default NL, DE, PL, FR, UK if available")
     args = parser.parse_args()
-    key = os.environ.get("BUNNY_API_KEY") or getpass.getpass("Enter Bunny account API Key (hidden): ").strip()
+    try:
+        key = os.environ.get("BUNNY_API_KEY") or getpass.getpass(
+            "Enter Bunny account API Key (hidden): "
+        ).strip()
+    except (EOFError, KeyboardInterrupt):
+        print("Bunny API Key input cancelled. Run from an interactive terminal.", file=sys.stderr)
+        return 2
     try:
         install(BunnyAPI(key), region=args.region)
         return 0
