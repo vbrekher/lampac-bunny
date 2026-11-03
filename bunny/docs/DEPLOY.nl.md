@@ -1,5 +1,20 @@
 # Lampac Bunny — installeren op bunny.net (NL)
 
+## Automatische installatie — één opdracht
+
+Plak deze opdracht in de Terminal op macOS of Linux:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/vbrekher/lampac-bunny/main/bunny/scripts/install-bunny.sh | bash
+```
+
+Voer je **Bunny account API Key** in bij de verborgen vraag (Bunny Dashboard → Account → API). Docker of een GitHub-token is niet nodig. Het script controleert de openbare GHCR-image en SHA-256, kiest een beschikbare Europese regio (eerst NL), koppelt de registry, maakt één instantie, een **5 GB** persistent SQLite-volume op `/lampac/database`, een HTTPS-CDN-endpoint voor poort `9118` en een uniek beheerderswachtwoord. De installatie is pas geslaagd als beide HTTP-controles antwoord 200 geven.
+
+Maak het pakket `lampac-bunny` in GitHub Packages eerst **Public**. Een privéimage kan niet met alleen een Bunny-sleutel worden gedownload; het script stopt dan voordat er kosten ontstaan. De Bunny API Key wordt niet bewaard. Het app-wachtwoord staat alleen lokaal in `~/.config/lampac-bunny/deployment.json` met rechten 0600. Een herhaalde installatie maakt geen duplicaat.
+
+Magic Containers, CDN en opslag kunnen kosten veroorzaken. Het CDN-adres is openbaar; beveilig de beheerfuncties voordat je het deelt. HTTP-controles bewijzen niet dat videobronnen of afspelen werken.
+
+
 Lampac Bunny is een **zelfstandige Lampac-backend**. Het project is niet afhankelijk van Lampa Multilingual Edition en kan door elke geschikte client worden gebruikt. Gebruik uitsluitend mediabronnen waarvoor je toestemming hebt.
 
 > **Status:** de broncode en offline controles zijn voorbereid. Een echte Bunny-deployment, de werking van mediabronnen, afspelen en gegevensherstel zijn **nog niet gevalideerd**. Stel de server niet onbeschermd bloot aan het internet.

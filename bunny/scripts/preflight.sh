@@ -62,4 +62,10 @@ if grep -Eq 'groupadd[[:space:]]+--gid[= ]1000|useradd[[:space:]]+--uid[= ]1000'
 fi
 printf 'PASS: non-root identity without Ubuntu UID/GID collision\n'
 printf 'PASS: Dockerfile and build context static audit\n'
+if command -v python3 >/dev/null 2>&1; then
+  python3 -c 'import ast,sys; [ast.parse(open(p, encoding="utf-8").read(), filename=p) for p in sys.argv[1:]]' \
+    "$ROOT_DIR/bunny/scripts/deploy_bunny.py" "$ROOT_DIR/bunny/scripts/test_deploy_bunny.py"
+  printf 'PASS: Python Bunny installer syntax\n'
+fi
+bash -n "$ROOT_DIR/bunny/scripts/install-bunny.sh"
 printf 'LAMPAC_BUNNY_PREFLIGHT_PASS\n'
