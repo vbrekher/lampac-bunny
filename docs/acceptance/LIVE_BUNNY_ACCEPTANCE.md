@@ -1,6 +1,7 @@
 # Lampac Bunny — live Bunny acceptance
 
-**LIVE_DEPLOYMENT_VERIFIED = false**  
+**LIVE_DEPLOYMENT_VERIFIED = false**
+
 **LIVE_ACCEPTANCE = BLOCKED**
 
 Tested at **2026-11-03T21:46:50.957538+00:00 UTC** (UTC offset is explicit in the timestamp). Tested source commit: `c2eb9c9d2f8d10f9286a7700e1858a341183d96e`. Starting main: `8deb82073b019b7b138b070519bd14ff0d0c6b23`. The report commit follows the tested source commit; it adds evidence only.
@@ -72,9 +73,9 @@ Three advertised project URLs and the author repository link returned HTTP 200. 
 
 ## Remaining risks and owner action
 
-**High — public API access:** the existing starter configuration disables `accsdb` and does not protect every remaining media/proxy API. Administrative password configuration is not evidence of safe public operation. Keep the endpoint private until live admin/proxy checks and appropriate route controls are in place. No runtime configuration or image security fix is claimed in this PR.
+**High — public API access (`bunny/config/init.conf:44`):** the existing starter configuration disables `accsdb` and does not protect every remaining media/proxy API. Administrative password configuration is not evidence of safe public operation. Keep the endpoint private until live admin/proxy checks and appropriate route controls are in place. No runtime configuration or image security fix is claimed in this PR.
 
-**Medium — concurrency and partial creation:** the lock covers one machine. Bunny name lookup plus application creation is not a cross-machine transaction. Use one provisioning terminal per account. If a creation response or local state write fails, inspect Bunny before retrying; do not remove volumes. A lost local password must be recovered securely from the existing Bunny environment configuration rather than creating another app.
+**Medium — concurrency and partial creation (`bunny/scripts/deploy_bunny.py:338`):** the lock covers one machine. Bunny name lookup plus application creation is not a cross-machine transaction. Use one provisioning terminal per account. If a creation response or local state write fails, inspect Bunny before retrying; do not remove volumes. A lost local password must be recovered securely from the existing Bunny environment configuration rather than creating another app.
 
 The owner must make the [expected GHCR package](https://github.com/users/vbrekher/packages/container/lampac-bunny/settings) anonymously pullable and confirm that the expected tag exists. This cannot be completed with the currently available package permissions. Then run this single command in a local interactive terminal; the API Key prompt is hidden:
 
