@@ -110,7 +110,7 @@ class InstallerTests(unittest.TestCase):
 
     def test_failed_api_does_not_echo_token(self):
         with self.assertRaises(m.InstallerError):
-            m.BunnyAPI("my-secret-key\\nnewline")
+            m.BunnyAPI("my-secret-key\nnewline")
 
     def test_existing_conflicting_app_no_write(self):
         api = FakeAPI(app={"name": m.APP_NAME, "id": "existing"})
