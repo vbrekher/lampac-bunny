@@ -26,6 +26,8 @@ De nieuwe `bunny/Dockerfile` bouwt een **LIGHT-image** op basis van de volledige
 
 **v0.1.1 oplossing voor de containergebruiker:** Ubuntu in de .NET 10-basisimage heeft al een groep met GID 1000. De Dockerfile gebruikt daarom de bestaande niet-rootgebruiker `app` in plaats van een conflicterende groep te maken. Voer `bash bunny/scripts/local-acceptance.sh` uit voor een lokale test die direct stopt bij een bouwfout.
 
+**Opnieuw testen zonder hercompilatie:** na een geslaagde Docker-build maar een vroege HTTP-fout, voer `bash bunny/scripts/local-acceptance.sh --no-build` uit met `LAMPAC_ROOT_PASSWORD` ingesteld. Het script blijft tijdens het opstarten proberen en toont de containerstatus en logboeken bij een fout. Een vroege curl-fout (52) bewijst niet dat Lampac defect is.
+
 ## 1. Zelf de Docker-image bouwen
 
 Benodigd: Git, Bash, Docker met buildx en `jq` voor de offline controle.

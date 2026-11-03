@@ -26,6 +26,8 @@ The new `bunny/Dockerfile` is a **LIGHT profile**: it compiles Lampac source aga
 
 **v0.1.1 container-user correction:** the .NET 10 base uses Ubuntu, where GID 1000 already exists. The Dockerfile uses the pre-existing non-root `app` user instead of creating a conflicting `lampac` group. Run `bash bunny/scripts/local-acceptance.sh` for fail-closed local build and smoke tests (no false success after build errors).
 
+**Recheck without recompiling:** after a successful Docker build but an early HTTP failure, run `bash bunny/scripts/local-acceptance.sh --no-build` with `LAMPAC_ROOT_PASSWORD` set. It retries during startup and reports container status/logs on failure. An initial curl (52) alone does not prove Lampac is broken.
+
 ## 1. Build locally
 
 Requires Docker with buildx, Bash and Git; `jq` is needed for offline preflight.
