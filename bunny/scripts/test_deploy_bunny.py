@@ -19,7 +19,7 @@ class FakeAPI:
     def __init__(self, *, app=None):
         self.calls = []
         self.app = app
-        self.registries = []
+        self.registries = [{"id": 42, "hostName": "ghcr.io", "isPublic": True}]
         self.regions = [
             {"id": "NL", "name": "Amsterdam", "hasCapacity": True},
             {"id": "DE", "name": "Frankfurt", "hasCapacity": True},
@@ -41,7 +41,7 @@ class FakeAPI:
     def call(self, method, path, body=None):
         self.calls.append((method, path, body))
         if method == "POST" and path == "/registries":
-            self.registries.append({"id": 42, "hostName": "ghcr.io"})
+            self.registries.append({"id": 42, "hostName": "ghcr.io", "isPublic": True})
             return {"status": "saved", "id": 42}
         if method == "POST" and path == "/apps":
             self.created = body
@@ -53,6 +53,7 @@ class FakeAPI:
             return {
                 "id": "mock-app-id", "name": m.APP_NAME,
                 "containerTemplates": [{
+                    "id": "container-id", "imageRegistryId": "42",
                     "name": m.CONTAINER_NAME, "imageName": "lampac-bunny",
                     "imageNamespace": "vbrekher", "imageTag": "v0.1.1",
                 }],
@@ -121,6 +122,7 @@ class InstallerTests(unittest.TestCase):
 
     def test_registry_type_and_digest_pin(self):
         api = FakeAPI()
+        api.registries = []
         m.ensure_registry(api)
         body = next(c[2] for c in api.calls if c[:2] == ("POST", "/registries"))
         self.assertEqual(body["type"], "gitHub")
@@ -128,6 +130,7 @@ class InstallerTests(unittest.TestCase):
 
     def test_registry_failure_prevents_app_creation(self):
         api = FakeAPI()
+        api.registries = []
         api.call = mock.Mock(side_effect=m.InstallerError("registry unavailable"))
         with tempfile.TemporaryDirectory() as d, self.assertRaises(m.InstallerError):
             m.install(api, region=None, state_path=Path(d) / "state.json", verify_image=False)
@@ -173,6 +176,16 @@ class InstallerTests(unittest.TestCase):
                 m.BunnyAPI(secret).call("GET", "/apps")
         self.assertNotIn(secret, str(result.exception))
         self.assertIn("401", str(result.exception))
+
+    def test_public_registry_selected_over_private_credentials(self):
+        api = FakeAPI()
+        api.registries.insert(0, {"id": 99, "hostName": "ghcr.io", "isPublic": False})
+        self.assertEqual(m.ensure_registry(api), "42")
+        self.assertFalse(any(c[0] == "POST" for c in api.calls))
+
+    def test_startup_probe_allows_cold_module_compilation(self):
+        c = m.create_payload("AMS", "42", "offline-test-password")["containerTemplates"][0]
+        self.assertGreaterEqual(c["probes"]["startup"]["failureThreshold"] * c["probes"]["startup"]["periodSeconds"], 600)
 
     def test_ambiguous_apps_refused(self):
         api = FakeAPI()

@@ -234,7 +234,7 @@ def validate_existing(app: dict) -> None:
 
 def ensure_registry(api: BunnyAPI) -> str:
     registries = api.items("/registries")
-    existing = next((r for r in registries if str(r.get("hostName", "")).lower() == "ghcr.io"), None)
+    existing = next((r for r in registries if str(r.get("hostName", "")).lower() == "ghcr.io" and r.get("isPublic") is True), None)
     if existing:
         return str(existing["id"])
     print("Connecting public GHCR registry to your Bunny account...")
@@ -242,7 +242,7 @@ def ensure_registry(api: BunnyAPI) -> str:
     if result.get("status") != "saved" or not result.get("id"):
         # Collision or registry timing may leave a matching record visible.
         again = api.items("/registries")
-        existing = next((r for r in again if str(r.get("hostName", "")).lower() == "ghcr.io"), None)
+        existing = next((r for r in again if str(r.get("hostName", "")).lower() == "ghcr.io" and r.get("isPublic") is True), None)
         if not existing:
             raise InstallerError("Bunny could not connect public GHCR registry")
         return str(existing["id"])
@@ -287,7 +287,7 @@ def create_payload(region_id: str, registry_id: str, password: str) -> dict:
                 },
             }],
             "volumeMounts": [{"name": VOLUME_NAME, "mountPath": "/lampac/database"}],
-            "probes": {"startup": probe, "readiness": probe, "liveness": probe},
+            "probes": {"startup": dict(probe, failureThreshold=60), "readiness": probe, "liveness": probe},
         }],
         "volumes": [{"name": VOLUME_NAME, "size": VOLUME_GB}],
     }
@@ -348,11 +348,21 @@ def install(api: BunnyAPI, *, region: str | None, state_path: Path = STATE_FILE,
         app_id = existing["id"]
         full = api.call("GET", "/apps/" + parse.quote(app_id, safe=""))
         validate_existing(full)
+        registry_id = ensure_registry(api)
+        container = full["containerTemplates"][0]
+        registry_changed = str(container.get("imageRegistryId")) != registry_id
+        if registry_changed:
+            container_id = container.get("id")
+            if not container_id:
+                raise InstallerError("Existing container has no ID; cannot repair registry safely")
+            api.call("PATCH", "/apps/" + parse.quote(app_id, safe="") + "/containers/" +
+                     parse.quote(container_id, safe=""), {"imageRegistryId": registry_id})
+            print("Using anonymous public GHCR registry; private registry credentials are unchanged.")
         print("Existing Lampac Bunny found; no duplicate will be created.")
         if not saved:
             print("Note: this computer has no saved admin password for the existing app.")
         should_deploy = bool(
-            redeploy or (saved and saved.get("deployed") is False)
+            registry_changed or redeploy or (saved and saved.get("deployed") is False)
             or full.get("status") in ("inactive", "failing", "unknown")
         )
     else:
