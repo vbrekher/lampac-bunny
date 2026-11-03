@@ -1,109 +1,79 @@
-# Lampac Bunny — deploy to bunny.net (EN)
+# Lampac Bunny — deploy to Bunny
 
-## Automatic installation — one command
+## Quick start
 
-Paste this into a macOS or Linux terminal:
+Requirements: macOS or Linux, Bash, curl, **Python 3.10+**, and a Bunny account that permits Magic Containers provisioning. Docker, GitHub, VPS and SSH configuration are not required.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/vbrekher/lampac-bunny/main/bunny/scripts/install-bunny.sh | bash
 ```
 
-Enter your **Bunny account API Key** at the hidden prompt (Bunny Dashboard → Account → API). No Docker or GitHub token is required. The installer verifies the public GHCR image digest and linux/amd64 platform, chooses an available European region (NL first), connects the registry, creates one instance, one **5 GB** SQLite volume at `/lampac/database`, the HTTPS CDN endpoint for port `9118`, a unique root password, and deploys. It reports success only after live HTTP 200 responses from both health and plugin routes.
+Get the **account API Key** in [Bunny Dashboard](https://dash.bunny.net/) → Account → API. Enter it at the hidden prompt. The installer sends it only to Bunny, never stores it, and rejects credential-bearing redirects. Existing `BUNNY_API_KEY` or `BUNNYNET_API_KEY` environment variables are supported for automation; do not put literal secrets in shell history.
 
-The GitHub Packages image must be **Public** to deploy using only a Bunny key. If private, the installer stops before creating resources. The Bunny API Key is never stored. The app's generated password is saved locally to `~/.config/lampac-bunny/deployment.json` with mode 0600. Repeat runs reuse the matching app.
+**Live acceptance: BLOCKED.** On 2026-11-03, real authenticated Bunny API checks succeeded and AMS reported capacity, but anonymous GHCR token access returned HTTP 401. No application or volume was created. Deployment, public HTTPS, SQLite persistence, restart, Lampa and playback remain unverified. See the [live acceptance report](../../docs/acceptance/LIVE_BUNNY_ACCEPTANCE.md) and [JSON results](../../docs/acceptance/live-bunny-results.json).
 
-Bunny compute, CDN and storage can incur charges. The generated CDN URL is public; apply access controls before sharing. HTTP smoke tests do not certify content availability or playback.
+The package owner must enable public pulls in [GitHub package settings](https://github.com/users/vbrekher/packages/container/lampac-bunny/settings). A Bunny key cannot pull a private GHCR image. After that change, rerun the command: the exact digest and platform are still checked before resources are provisioned.
 
+## Automatic configuration
 
-Lampac Bunny is a **standalone Lampac backend**. It does not depend on Lampa Multilingual Edition and can serve any compatible client. Only connect to content sources you are entitled to use.
+The installer verifies `ghcr.io/vbrekher/lampac-bunny:v0.1.1`, expected digest `sha256:ec518a9170c5f4b4373545851f2325f285ee0daa26af6cd4ffa5819200b12adc`, and `linux/amd64`. It pins the image digest in Bunny's configuration, selects one available European region (AMS first), connects GHCR, and creates:
 
-> **Status:** source adapter and offline checks prepared; live Bunny deployment, content providers, playback and volume restoration **not yet verified**. Do not expose this app unprotected in production.
+- One `lampac-bunny` application with shared runtime and scaling minimum/maximum both set to one.
+- One 5 GB persistent volume mounted at `/lampac/database`.
+- Internal HTTP port `9118` and a public HTTPS CDN endpoint.
+- A random `LAMPAC_ROOT_PASSWORD` and startup/readiness/liveness probes at `/version?type=hash`.
 
+Bunny bills compute, storage and CDN usage. The installer waits up to 600 seconds for nonempty HTTP 200 responses from `/version?type=hash` and `/online.js`. This is a smoke check, not full acceptance.
 
-## Fix a read-only Docker Desktop disk
+## Find the URL and connect
 
-The provided build log failed **inside Docker Desktop storage**, not GitHub or NuGet: `dpkg: Input/output error`, `NuGet: Read-only file system`, then `metadata_v2.db: read-only file system`.
+The URL appears in terminal output and **Magic Containers → lampac-bunny → Endpoints**. Add `https://YOUR-ENDPOINT/online.js` in a compatible Lampa client's plugin settings. Test catalogs and playback separately using permitted content; API success is not proof of video playback.
 
-1. **Restart Docker Desktop** without Factory Reset or deleting other projects' volumes.
-2. Run `bash bunny/scripts/doctor.sh` (read-only diagnostics).
-3. Check Mac free space and **Docker Desktop → Settings → Resources → Advanced**. Increase or relocate the VM disk through Docker Desktop itself, not Finder.
-4. Once Docker is healthy, you may interactively run `docker builder prune` to discard **unused build caches** if acceptable. Do **not** run `docker system prune --volumes`.
-5. Rebuild after updating the repository:
+The generated password and deployment metadata are saved at `~/.config/lampac-bunny/deployment.json` (or under `XDG_CONFIG_HOME`) with permissions `0600`. Keep a protected backup. Do not post this file or credentials publicly.
+
+## Reopen, retry and update
+
+Repeat the original command to locate and reuse the matching application without replacing its volumes. A pending or inactive deployment is retried. Conflicting images, duplicate names and inconsistent local state stop the installer for inspection.
 
 ```bash
-git pull --ff-only
-bash bunny/scripts/doctor.sh
+# Redeploy the same pinned image; allow 15 minutes for HTTPS startup.
+curl -fsSL https://raw.githubusercontent.com/vbrekher/lampac-bunny/main/bunny/scripts/install-bunny.sh | bash -s -- --redeploy --timeout 900
+# Explicit region for a new application, if capacity is available.
+curl -fsSL https://raw.githubusercontent.com/vbrekher/lampac-bunny/main/bunny/scripts/install-bunny.sh | bash -s -- --region DE
+```
+
+A local lock prevents simultaneous installs on one machine. Do not provision concurrently from multiple machines. After a create timeout, inspect the dashboard before retrying. Do not delete an existing application or volume to recover. `--redeploy` does not select a new release; an image upgrade requires a reviewed version and digest. Never overwrite the published `v0.1.1` tag silently.
+
+## Troubleshooting
+
+| Failure | Action |
+| --- | --- |
+| Bunny 401/403 | Check the account API Key and Magic Containers permissions |
+| GHCR inaccessible or digest mismatch | Check public package access; do not bypass digest verification |
+| No capacity | Retry later or choose an available European region |
+| Endpoint/startup timeout | Inspect container status, probes, CDN endpoint and logs; rerun with a longer timeout |
+| Interrupted deployment | Rerun; the installer finds the matching app and retained volume |
+| Local state mismatch | Inspect protected local metadata and the Bunny app before changing anything |
+| Docker disk is read-only during development | Run `bash bunny/scripts/doctor.sh`; repair Docker storage while preserving volumes |
+
+## Local development and configuration
+
+```bash
 bash bunny/scripts/preflight.sh
-bash bunny/scripts/build-image.sh ghcr.io/vbrekher/lampac-bunny:v0.1.1 --load
+python3 bunny/scripts/test_deploy_bunny.py
+bash bunny/scripts/test-local-acceptance.sh
+# Use your own new versioned image tag:
+bash bunny/scripts/build-image.sh YOUR-REGISTRY/lampac-bunny:NEW-VERSION --load
 ```
 
-The new `bunny/Dockerfile` is a **LIGHT profile**: it compiles Lampac source against official .NET 10 images but does **not install** Chromium, GStreamer or FFmpeg. The starter configuration disables the related modules. Do not enable them through a JSON override; a separately tested enhanced image is required. A persistent read-only VM after restart and sufficient space needs Docker disk investigation while preserving volumes, not a blind reset.
+`--push` publishes after registry authentication. The LIGHT source build uses .NET 10 and excludes Chromium, FFmpeg and GStreamer. Do not enable those tools without a separately tested image. Optional modules such as Sync, TimeCode, TorrServer, JacRed, WebLog and SISI start disabled.
 
-**v0.1.1 container-user correction:** the .NET 10 base uses Ubuntu, where GID 1000 already exists. The Dockerfile uses the pre-existing non-root `app` user instead of creating a conflicting `lampac` group. Run `bash bunny/scripts/local-acceptance.sh` for fail-closed local build and smoke tests (no false success after build errors).
+An optional `LAMPAC_BUNNY_CONFIG_B64` can encode a customized `bunny/config/init.conf`. Base64 is not encryption. The runtime override wins over `config/base.conf` and code defaults; keep HTTP on `0.0.0.0:9118`. The bootstrap validates JSON and listener configuration, not the safety of every module.
 
-**Recheck without recompiling:** after a successful Docker build but an early HTTP failure, run `bash bunny/scripts/local-acceptance.sh --no-build` with `LAMPAC_ROOT_PASSWORD` set. It retries during startup and reports container status/logs on failure. An initial curl (52) alone does not prove Lampac is broken.
+## Security and persistence
 
-## 1. Build locally
+The root password protects administrative functions, but the starter configuration is not a universal API authentication gateway. Public CDN routes require reviewed access controls, route restrictions and rate limits. Protection against unrestricted proxy use remains unverified; do not share an unrestricted endpoint.
 
-Requires Docker with buildx, Bash and Git; `jq` is needed for offline preflight.
+Use one replica in one region for SQLite. `/lampac/database` is local SQLite, not Bunny Database. Maintain consistent backups and test restoration; never remove user data for acceptance tests. Restart/recovery, SQLite durability and .NET log inspection require a real running deployment. Destructive tests belong on a separate disposable instance.
 
-```bash
-git clone https://github.com/vbrekher/lampac-bunny.git
-cd lampac-bunny
-bash bunny/scripts/preflight.sh
-bash bunny/scripts/build-image.sh ghcr.io/vbrekher/lampac-bunny:v0.1.1 --load
-# To publish after docker login ghcr.io:
-bash bunny/scripts/build-image.sh ghcr.io/vbrekher/lampac-bunny:v0.1.1 --push
-```
-
-`--load` builds a local image; `--push` publishes it to your registry. The Dockerfile builds this fork's .NET source; it does not simply wrap an upstream binary. Expect a large image and a resource-intensive build due to browser and media dependencies.
-
-For local development:
-
-```bash
-export LAMPAC_ROOT_PASSWORD="$(openssl rand -hex 24)"
-docker compose -f bunny/compose.yaml up --build -d
-curl -fsS 'http://127.0.0.1:9118/version?type=hash'
-```
-
-Keep the password out of Git and public logs.
-
-## 2. Deploy to Bunny Magic Containers
-
-Open [Bunny Dashboard](https://dash.bunny.net/) → **Magic Containers → Add App**:
-
-1. Select your published **linux/amd64** image `ghcr.io/vbrekher/lampac-bunny:v0.1.1`; connect GHCR first if the image is private.
-2. Create **one CDN endpoint** forwarding to container port **9118**. TLS terminates at Bunny; Lampac listens on HTTP internally.
-3. Attach a persistent volume at `/lampac/database` (for example, 5 GB). A second optional volume can go to `/lampac/cache` (for example, 2 GB). Trial accounts support only one volume.
-4. Add `LAMPAC_ROOT_PASSWORD` in Environment Variables (unique, at least 16 characters).
-5. Choose **one region, one replica, no autoscaling**. Lampac's embedded SQLite is not distributed.
-6. Add HTTP startup/readiness/liveness checks: path `/version?type=hash`, port 9118, and allow a generous initial startup window.
-7. Before sharing the endpoint, configure proper access controls, rate limits and route restrictions. A Bunny CDN endpoint is **public** by default; upstream modules are not all suitable for public exposure.
-8. Deploy, inspect logs and verify:
-
-```bash
-bash bunny/scripts/smoke.sh 'https://YOUR-CONTAINER-ENDPOINT'
-```
-
-This checks the health URL and `/online.js`, not actual media availability or codec support.
-
-## 3. Optional modules and configuration
-
-The safe-start template disables stateful and risky modules (including TorrServer, JacRed, Sync, TimeCode, GStreamer, DLNA, WebLog and SISI). They remain in the source code and can be enabled only after validating security, networking and resources.
-
-To override the configuration, edit a local copy of `bunny/config/init.conf`, then encode it:
-
-```bash
-base64 < bunny/config/init.conf | tr -d '\n'
-```
-
-Paste the result into the Bunny `LAMPAC_BUNNY_CONFIG_B64` environment variable. The decoded file must be valid JSON, with HTTP on `0.0.0.0:9118` (or `ip=any`). The entrypoint fails closed on invalid settings. Restart the container to apply configuration. Never embed secrets in the JSON preset.
-
-## 4. Persistence and caveats
-
-- `/lampac/database` retains local SQLite state, **not Bunny Database**. Direct Bunny Database integration is not implemented.
-- Bunny persistent volumes have **no automatic replication or backup**, and separate replicas receive independent volumes. Use one replica and back up offline snapshots with a restore drill.
-- Torrent/P2P, multicast/DLNA, inbound network protocols and GStreamer workloads may be limited by Magic Containers sandbox, networking or costs. Not certified.
-- Open online source access and media relay require explicit abuse, copyright, credential and SSRF protections. No all-providers-working claim is made.
-
-Read [Security](SECURITY.md), [Architecture](ARCHITECTURE.md), the [Bunny deployment documentation](https://bunny.net/docs/magic-containers/deploy), [Persistent Volumes](https://bunny.net/docs/magic-containers/persistent-volumes), and [Lampac docs](https://docs.lampac.dev/).
+Read [Security](SECURITY.md), [Architecture](ARCHITECTURE.md), [official deployment](https://bunny.net/docs/magic-containers/deploy), [persistent volumes](https://bunny.net/docs/magic-containers/persistent-volumes), and [Lampac documentation](https://docs.lampac.dev/).

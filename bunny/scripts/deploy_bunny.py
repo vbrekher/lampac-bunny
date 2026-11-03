@@ -27,7 +27,7 @@ CONTAINER_NAME = "lampac"
 VOLUME_NAME = "lampac-database"
 VOLUME_GB = 5
 PORT = 9118
-PREFERRED_REGIONS = ("NL", "DE", "PL", "FR", "UK")
+PREFERRED_REGIONS = ("AMS", "NL", "DE", "PL", "FR", "UK")
 STATE_DIR = Path(os.environ.get("XDG_CONFIG_HOME", str(Path.home() / ".config"))) / "lampac-bunny"
 STATE_FILE = STATE_DIR / "deployment.json"
 
@@ -133,7 +133,7 @@ def verify_public_image() -> None:
         )
         with request.urlopen(req, timeout=25) as res:
             raw = res.read(2_000_000)
-            digest = res.headers.get("Docker-Content-Digest") or "sha256:" + hashlib.sha256(raw).hexdigest()
+            digest = "sha256:" + hashlib.sha256(raw).hexdigest()
         if digest.lower() != IMAGE_DIGEST:
             raise InstallerError("GHCR tag digest mismatch: refusing an unexpected image")
         index = json.loads(raw)
@@ -224,6 +224,8 @@ def validate_existing(app: dict) -> None:
     if len(containers) != 1:
         raise InstallerError("An app named lampac-bunny already exists with different containers")
     item = containers[0]
+    if item.get("imageDigest") not in (None, "", IMAGE_DIGEST):
+        raise InstallerError("Existing app image digest differs; refusing to overwrite")
     if (item.get("name"), item.get("imageNamespace"), item.get("imageName"), item.get("imageTag")) != (
         CONTAINER_NAME, "vbrekher", "lampac-bunny", "v0.1.1"
     ):
@@ -236,7 +238,7 @@ def ensure_registry(api: BunnyAPI) -> str:
     if existing:
         return str(existing["id"])
     print("Connecting public GHCR registry to your Bunny account...")
-    result = api.call("POST", "/registries", {"displayName": "ghcr.io"})
+    result = api.call("POST", "/registries", {"displayName": "ghcr.io", "type": "gitHub"})
     if result.get("status") != "saved" or not result.get("id"):
         # Collision or registry timing may leave a matching record visible.
         again = api.items("/registries")
@@ -273,6 +275,7 @@ def create_payload(region_id: str, registry_id: str, password: str) -> dict:
             "imageName": "lampac-bunny",
             "imageNamespace": "vbrekher",
             "imageTag": "v0.1.1",
+            "imageDigest": IMAGE_DIGEST,
             "imageRegistryId": registry_id,
             "imagePullPolicy": "always",
             "environmentVariables": [{"name": "LAMPAC_ROOT_PASSWORD", "value": password}],
@@ -325,16 +328,18 @@ def check_http(url: str) -> bool:
 
 
 def install(api: BunnyAPI, *, region: str | None, state_path: Path = STATE_FILE,
-            verify_image: bool = True, poll: bool = True) -> str:
+            verify_image: bool = True, poll: bool = True,
+            timeout: int = 600, redeploy: bool = False) -> str:
     print("Lampac Bunny — automatic Bunny Magic Containers deployment")
     print("Image:", IMAGE)
     print("Configuration: one instance, HTTP 9118 / CDN HTTPS, 5 GB persistent database volume")
+    # Validate account permissions before registry checks; GET cannot create resources.
+    existing = find_app(api)
     if verify_image:
         verify_public_image()
         print("PASS: GHCR image is publicly pullable with verified digest and linux/amd64 platform")
 
     saved = read_state(state_path)
-    existing = find_app(api)
     if saved and existing and saved["appId"] != existing["id"]:
         raise InstallerError("Local app ID differs from Bunny app of same name; refusing changes")
     if saved and not existing:
@@ -347,7 +352,7 @@ def install(api: BunnyAPI, *, region: str | None, state_path: Path = STATE_FILE,
         if not saved:
             print("Note: this computer has no saved admin password for the existing app.")
         should_deploy = bool(
-            (saved and saved.get("deployed") is False)
+            redeploy or (saved and saved.get("deployed") is False)
             or full.get("status") in ("inactive", "failing", "unknown")
         )
     else:
@@ -384,7 +389,9 @@ def install(api: BunnyAPI, *, region: str | None, state_path: Path = STATE_FILE,
     print("Bunny app ID:", app_id)
     if not poll:
         return app_id
-    for attempt in range(24):
+    deadline = time.monotonic() + timeout
+    attempt = 0
+    while time.monotonic() < deadline:
         url = endpoint_url(api, app_id)
         if url and check_http(url):
             print("PASS: HTTPS health endpoint and online.js respond with HTTP 200")
@@ -393,8 +400,8 @@ def install(api: BunnyAPI, *, region: str | None, state_path: Path = STATE_FILE,
             return app_id
         if attempt in (0, 9, 19):
             print("Waiting for Bunny deployment and CDN endpoint...")
-        if attempt < 23:
-            time.sleep(5)
+        attempt += 1
+        time.sleep(min(5, max(0, deadline - time.monotonic())))
     url = endpoint_url(api, app_id)
     if url:
         print("Endpoint:", url)
@@ -408,20 +415,34 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Deploy Lampac Bunny to Bunny Magic Containers using only your account API Key."
     )
-    parser.add_argument("--region", help="Bunny region ID; default NL, DE, PL, FR, UK if available")
+    parser.add_argument("--region", help="Bunny region ID; default AMS, NL, DE, PL, FR, UK if available")
+    parser.add_argument("--timeout", type=int, default=600, help="HTTPS startup wait in seconds (default 600)")
+    parser.add_argument("--redeploy", action="store_true", help="Redeploy the matching app without replacing volumes")
     args = parser.parse_args()
+    if args.timeout < 1:
+        parser.error("--timeout must be positive")
     try:
-        key = os.environ.get("BUNNY_API_KEY") or getpass.getpass(
+        key = os.environ.get("BUNNY_API_KEY") or os.environ.get("BUNNYNET_API_KEY") or getpass.getpass(
             "Enter Bunny account API Key (hidden): "
         ).strip()
     except (EOFError, KeyboardInterrupt):
         print("Bunny API Key input cancelled. Run from an interactive terminal.", file=sys.stderr)
         return 2
     try:
-        install(BunnyAPI(key), region=args.region)
+        # Serialize installers on this machine; lock is released even after a crash.
+        import fcntl
+        STATE_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
+        flags = os.O_CREAT | os.O_RDWR | getattr(os, "O_NOFOLLOW", 0)
+        with os.fdopen(os.open(STATE_DIR / "install.lock", flags, 0o600), "w") as lock:
+            try:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                raise InstallerError("Another installer is running on this machine; wait and retry") from None
+            install(BunnyAPI(key), region=args.region, timeout=args.timeout, redeploy=args.redeploy)
         return 0
-    except InstallerError as exc:
-        print("LAMPAC_BUNNY_BUNNY_DEPLOY_FAIL:", exc, file=sys.stderr)
+    except (InstallerError, OSError) as exc:
+        message = str(exc) if isinstance(exc, InstallerError) else "Local state/lock I/O failed; inspect permissions and disk space before retrying"
+        print("LAMPAC_BUNNY_BUNNY_DEPLOY_FAIL:", message, file=sys.stderr)
         return 1
     finally:
         key = ""

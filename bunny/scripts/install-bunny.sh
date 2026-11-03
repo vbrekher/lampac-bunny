@@ -4,11 +4,11 @@
 set -euo pipefail
 
 command -v python3 >/dev/null 2>&1 || {
-  echo "Python 3.9+ is required. Install Python 3, then retry." >&2
+  echo "Python 3.10+ is required. Install Python 3, then retry." >&2
   exit 1
 }
-python3 -c 'import sys; sys.exit(0 if sys.version_info >= (3, 9) else 1)' || {
-  echo "Python 3.9+ is required." >&2
+python3 -c 'import sys; sys.exit(0 if sys.version_info >= (3, 10) else 1)' || {
+  echo "Python 3.10+ is required." >&2
   exit 1
 }
 

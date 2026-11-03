@@ -112,6 +112,89 @@ class InstallerTests(unittest.TestCase):
         with self.assertRaises(m.InstallerError):
             m.BunnyAPI("my-secret-key\nnewline")
 
+    def test_current_bunny_amsterdam_region(self):
+        self.assertEqual(m.select_region([{"id": "AMS", "group": "EU", "hasCapacity": True}])["id"], "AMS")
+
+    def test_no_capacity(self):
+        with self.assertRaises(m.InstallerError):
+            m.select_region([{"id": "AMS", "hasCapacity": False}])
+
+    def test_registry_type_and_digest_pin(self):
+        api = FakeAPI()
+        m.ensure_registry(api)
+        body = next(c[2] for c in api.calls if c[:2] == ("POST", "/registries"))
+        self.assertEqual(body["type"], "gitHub")
+        self.assertEqual(m.create_payload("AMS", "42", "test-password")["containerTemplates"][0]["imageDigest"], m.IMAGE_DIGEST)
+
+    def test_registry_failure_prevents_app_creation(self):
+        api = FakeAPI()
+        api.call = mock.Mock(side_effect=m.InstallerError("registry unavailable"))
+        with tempfile.TemporaryDirectory() as d, self.assertRaises(m.InstallerError):
+            m.install(api, region=None, state_path=Path(d) / "state.json", verify_image=False)
+        self.assertIsNone(api.created)
+
+    def test_ghcr_failure_has_no_mutations(self):
+        api = FakeAPI()
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(
+            m, "verify_public_image", side_effect=m.InstallerError("GHCR unavailable")
+        ), self.assertRaises(m.InstallerError):
+            m.install(api, region=None, state_path=Path(d) / "state.json")
+        self.assertFalse(any(c[0] == "POST" for c in api.calls))
+
+    def test_partial_deploy_reuses_app_and_password(self):
+        api = FakeAPI()
+        original = api.call
+        def fail_deploy(method, path, body=None):
+            if path.endswith("/deploy"):
+                raise m.InstallerError("network timeout")
+            return original(method, path, body)
+        api.call = fail_deploy
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "state.json"
+            with self.assertRaises(m.InstallerError):
+                m.install(api, region=None, state_path=path, verify_image=False, poll=False)
+            before = m.read_state(path)
+            self.assertFalse(before["deployed"])
+            api.call = original
+            m.install(api, region=None, state_path=path, verify_image=False, poll=False)
+            after = m.read_state(path)
+            self.assertTrue(after["deployed"])
+            self.assertEqual(before["password"], after["password"])
+            self.assertEqual(sum(c[:2] == ("POST", "/apps") for c in api.calls), 1)
+
+    def test_http_error_redacts_response_and_key(self):
+        from urllib.error import HTTPError
+        from io import BytesIO
+        secret = "test-secret-do-not-echo"
+        with mock.patch.object(m.NO_REDIRECT_OPENER, "open", side_effect=HTTPError(
+            "https://api.bunny.net/mc/apps", 401, "unauthorized", {}, BytesIO(secret.encode())
+        )):
+            with self.assertRaises(m.InstallerError) as result:
+                m.BunnyAPI(secret).call("GET", "/apps")
+        self.assertNotIn(secret, str(result.exception))
+        self.assertIn("401", str(result.exception))
+
+    def test_ambiguous_apps_refused(self):
+        api = FakeAPI()
+        api.items = lambda _: [{"name": m.APP_NAME, "id": "a"}, {"name": m.APP_NAME, "id": "b"}]
+        with self.assertRaises(m.InstallerError):
+            m.find_app(api)
+
+    def test_endpoint_timeout_does_not_report_success(self):
+        api = FakeAPI(app={"name": m.APP_NAME, "id": "mock-app-id"})
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(
+            m, "endpoint_url", return_value=None
+        ), mock.patch.object(m.time, "monotonic", side_effect=[0, 2]), self.assertRaises(m.InstallerError):
+            m.install(api, region=None, state_path=Path(d) / "state.json", verify_image=False, timeout=1)
+        self.assertFalse(any(c[0] == "POST" for c in api.calls))
+
+    def test_explicit_redeploy_preserves_app(self):
+        api = FakeAPI(app={"name": m.APP_NAME, "id": "mock-app-id"})
+        with tempfile.TemporaryDirectory() as d:
+            m.install(api, region=None, state_path=Path(d) / "state.json", verify_image=False, poll=False, redeploy=True)
+        self.assertEqual(sum(c[:2] == ("POST", "/apps/mock-app-id/deploy") for c in api.calls), 1)
+        self.assertFalse(any(c[:2] == ("POST", "/apps") for c in api.calls))
+
     def test_existing_conflicting_app_no_write(self):
         api = FakeAPI(app={"name": m.APP_NAME, "id": "existing"})
         api.call = lambda *a, **kw: {
