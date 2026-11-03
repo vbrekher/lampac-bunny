@@ -76,7 +76,7 @@ export LAMPAC_ROOT_PASSWORD="$(openssl rand -hex 24)"
 bash bunny/scripts/local-acceptance.sh
 ```
 
-The image runs as the built-in non-root `app` user supplied by the .NET 10 base, avoiding Ubuntu's existing GID 1000. The script stops on the first failure and shows container logs.
+The image runs as the built-in non-root `app` user supplied by the .NET 10 base, avoiding Ubuntu's existing GID 1000. The script retries transient HTTP startup failures (including curl 52), verifies a nonempty HTTP 200 response and shows container state/logs on persistent failure. To verify an **already built** local image without recompiling .NET, run `bash bunny/scripts/local-acceptance.sh --no-build`.
 
 To publish to your own GHCR after authentication:
 

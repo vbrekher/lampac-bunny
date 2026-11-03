@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 command -v jq >/dev/null || { echo 'jq is needed for local preflight' >&2; exit 1; }
 sh -n "$ROOT_DIR/bunny/docker-entrypoint.sh"
-for script in "$ROOT_DIR/bunny/scripts/build-image.sh" "$ROOT_DIR/bunny/scripts/smoke.sh" "$ROOT_DIR/bunny/scripts/doctor.sh"; do
+for script in "$ROOT_DIR/bunny/scripts/build-image.sh" "$ROOT_DIR/bunny/scripts/smoke.sh" "$ROOT_DIR/bunny/scripts/doctor.sh" "$ROOT_DIR/bunny/scripts/local-acceptance.sh"; do
   bash -n "$script"
 done
 jq -e '.listen.port == 9118 and .listen.scheme == "http" and (.BaseModule.SkipModules | index("TorrServer") != null)' "$ROOT_DIR/bunny/config/init.conf" >/dev/null
