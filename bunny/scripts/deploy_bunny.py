@@ -20,11 +20,13 @@ import time
 from urllib import error, parse, request
 
 API_BASE = "https://api.bunny.net/mc"
-IMAGE_TAG = "v0.1.2"
+IMAGE_TAG = "v0.1.3"
 IMAGE = "ghcr.io/vbrekher/lampac-bunny:" + IMAGE_TAG
 LEGACY_IMAGE = "ghcr.io/vbrekher/lampac-bunny:v0.1.1"
 LEGACY_DIGEST = "sha256:ec518a9170c5f4b4373545851f2325f285ee0daa26af6cd4ffa5819200b12adc"
-IMAGE_DIGEST = "sha256:70b2e61d9c764e0b3d7f8afa42ad7aac5afcea34a3bfabf542d5c9cfb8a2b54b"
+IMAGE_DIGEST = "sha256:25353ce71cf3bd5298877fd3b1cd40b2e9cbbeeaa8713fbedc126a02c69e66f2"
+PREVIOUS_IMAGE = "ghcr.io/vbrekher/lampac-bunny:v0.1.2"
+PREVIOUS_DIGEST = "sha256:70b2e61d9c764e0b3d7f8afa42ad7aac5afcea34a3bfabf542d5c9cfb8a2b54b"
 APP_NAME = "lampac-bunny"
 CONTAINER_NAME = "lampac"
 VOLUME_NAME = "lampac-database"
@@ -66,7 +68,7 @@ class BunnyAPI:
                 "AccessKey": self.key,
                 "Accept": "application/json",
                 "Content-Type": "application/json",
-                "User-Agent": "lampac-bunny-installer/0.1.2",
+                "User-Agent": "lampac-bunny-installer/0.1.3",
             },
         )
         try:
@@ -171,7 +173,7 @@ def read_state(path: Path = STATE_FILE) -> dict | None:
         state = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         raise InstallerError("Invalid deployment state; do not delete it until manually inspected") from None
-    if not isinstance(state, dict) or state.get("image") not in (IMAGE, LEGACY_IMAGE) or not state.get("appId"):
+    if not isinstance(state, dict) or state.get("image") not in (IMAGE, LEGACY_IMAGE, PREVIOUS_IMAGE) or not state.get("appId"):
         raise InstallerError("Deployment state does not match the expected Lampac Bunny image")
     return state
 
@@ -227,12 +229,12 @@ def validate_existing(app: dict) -> None:
     if len(containers) != 1:
         raise InstallerError("An app named lampac-bunny already exists with different containers")
     item = containers[0]
-    expected_digest = LEGACY_DIGEST if item.get("imageTag") == "v0.1.1" else IMAGE_DIGEST
+    expected_digest = {"v0.1.1": LEGACY_DIGEST, "v0.1.2": PREVIOUS_DIGEST, IMAGE_TAG: IMAGE_DIGEST}.get(item.get("imageTag"))
     if item.get("imageDigest") not in (None, "", expected_digest):
         raise InstallerError("Existing app image digest differs; refusing to overwrite")
     if (item.get("name"), item.get("imageNamespace"), item.get("imageName")) != (
         CONTAINER_NAME, "vbrekher", "lampac-bunny"
-    ) or item.get("imageTag") not in ("v0.1.1", IMAGE_TAG):
+    ) or item.get("imageTag") not in ("v0.1.1", "v0.1.2", IMAGE_TAG):
         raise InstallerError("App named lampac-bunny exists but uses another image; refusing to overwrite")
 
 
