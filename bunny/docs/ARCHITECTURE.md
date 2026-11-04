@@ -16,7 +16,7 @@
 ```
 
 - **Source of code:** full preserved Lampac NextGen fork in this repository, compiled by the lightweight `bunny/Dockerfile` using official .NET 10 images; Chromium, GStreamer and FFmpeg are not installed in the default runtime. The base upstream `Dockerfile` remains available and unchanged.
-- **Runtime:** one service listening on HTTP/9118. Bunny terminates HTTPS at the CDN endpoint; Dockerfile health and Bunny readiness check `/version?type=hash`.
+- **Runtime:** one service listening on HTTP/9118. Bunny terminates HTTPS at the CDN endpoint; Docker health checks `/version?type=hash`; Bunny startup/readiness/liveness probes use `/version`. The public advertised scheme is HTTPS while Kestrel remains HTTP internally.
 - **Config:** `/opt/lampac-bunny/init.conf` is the immutable starter template. `bunny/docker-entrypoint.sh` writes `/lampac/init.conf` and `/lampac/passwd` from environment on every start; these are in the ephemeral application directory. Overriding requires `LAMPAC_BUNNY_CONFIG_B64` with valid JSON.
 - **State:** Lampac's own SQLite and files under `/lampac/database`, optional `/lampac/cache`. No Bunny Database, Bunny Storage or Scripting connection is made implicitly.
 - **Plugins:** `/online.js` is the main client integration path. No Lampa Multilingual build, WGT, source import or compile dependency exists.
@@ -31,3 +31,5 @@
 4. Bunny deploy one region/replica with real volume, external HTTPS health PASS.
 5. Private authenticated client workflow PASS, media provider terms checked.
 6. Backup and restore test of any SQLite state; no unverified multi-region or auto-scaling claims.
+
+Live evidence: [Bunny acceptance](../../docs/acceptance/LIVE_BUNNY_ACCEPTANCE.md), verified 2026-11-04 UTC.

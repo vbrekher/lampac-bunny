@@ -10,18 +10,18 @@ curl -fsSL https://raw.githubusercontent.com/vbrekher/lampac-bunny/main/bunny/sc
 
 Get the **account API Key** in [Bunny Dashboard](https://dash.bunny.net/) → Account → API. Enter it at the hidden prompt. The installer sends it only to Bunny, never stores it, and rejects credential-bearing redirects. Existing `BUNNY_API_KEY` or `BUNNYNET_API_KEY` environment variables are supported for automation; do not put literal secrets in shell history.
 
-**Live acceptance: BLOCKED.** On 2026-11-03, real authenticated Bunny API checks succeeded and AMS reported capacity, but anonymous GHCR token access returned HTTP 401. No application or volume was created. Deployment, public HTTPS, SQLite persistence, restart, Lampa and playback remain unverified. See the [live acceptance report](../../docs/acceptance/LIVE_BUNNY_ACCEPTANCE.md) and [JSON results](../../docs/acceptance/live-bunny-results.json).
+**Live acceptance: PASS.** Verified on **2026-11-04 UTC** using real Bunny infrastructure in **AMS** and the pinned **v0.1.3** image. HTTPS, JavaScript/plugin loading, SQLite persistence, restart/crash recovery, repeated installation and protected administrative routes passed. See the [live report](../../docs/acceptance/LIVE_BUNNY_ACCEPTANCE.md) and [JSON evidence](../../docs/acceptance/live-bunny-results.json). Physical TV hardware and every provider were not tested.
 
-The package owner must enable public pulls in [GitHub package settings](https://github.com/users/vbrekher/packages/container/lampac-bunny/settings). A Bunny key cannot pull a private GHCR image. After that change, rerun the command: the exact digest and platform are still checked before resources are provisioned.
+Anonymous public GHCR access was verified. The installer selects the public GitHub registry and does not require GitHub credentials.
 
 ## Automatic configuration
 
-The installer verifies `ghcr.io/vbrekher/lampac-bunny:v0.1.1`, expected digest `sha256:ec518a9170c5f4b4373545851f2325f285ee0daa26af6cd4ffa5819200b12adc`, and `linux/amd64`. It pins the image digest in Bunny's configuration, selects one available European region (AMS first), connects GHCR, and creates:
+The installer verifies `ghcr.io/vbrekher/lampac-bunny:v0.1.3`, expected digest `sha256:25353ce71cf3bd5298877fd3b1cd40b2e9cbbeeaa8713fbedc126a02c69e66f2`, and `linux/amd64`. It pins the image digest in Bunny's configuration, selects one available European region (AMS first), connects GHCR, and creates:
 
 - One `lampac-bunny` application with shared runtime and scaling minimum/maximum both set to one.
 - One 5 GB persistent volume mounted at `/lampac/database`.
 - Internal HTTP port `9118` and a public HTTPS CDN endpoint.
-- A random `LAMPAC_ROOT_PASSWORD` and startup/readiness/liveness probes at `/version?type=hash`.
+- A random `LAMPAC_ROOT_PASSWORD` and startup/readiness/liveness probes at `/version`.
 
 Bunny bills compute, storage and CDN usage. The installer waits up to 600 seconds for nonempty HTTP 200 responses from `/version?type=hash` and `/online.js`. This is a smoke check, not full acceptance.
 
@@ -42,7 +42,7 @@ curl -fsSL https://raw.githubusercontent.com/vbrekher/lampac-bunny/main/bunny/sc
 curl -fsSL https://raw.githubusercontent.com/vbrekher/lampac-bunny/main/bunny/scripts/install-bunny.sh | bash -s -- --region DE
 ```
 
-A local lock prevents simultaneous installs on one machine. Do not provision concurrently from multiple machines. After a create timeout, inspect the dashboard before retrying. Do not delete an existing application or volume to recover. `--redeploy` does not select a new release; an image upgrade requires a reviewed version and digest. Never overwrite the published `v0.1.1` tag silently.
+A local lock prevents simultaneous installs on one machine. Do not provision concurrently from multiple machines. After a create timeout, inspect the dashboard before retrying. Do not delete an existing application or volume to recover. Recognized v0.1.1/v0.1.2 deployments are migrated to the reviewed pinned v0.1.3 release, preserving the volume, password, CDN and custom operator configuration. Other images are refused. Published tags are never overwritten.
 
 ## Troubleshooting
 
@@ -68,12 +68,12 @@ bash bunny/scripts/build-image.sh YOUR-REGISTRY/lampac-bunny:NEW-VERSION --load
 
 `--push` publishes after registry authentication. The LIGHT source build uses .NET 10 and excludes Chromium, FFmpeg and GStreamer. Do not enable those tools without a separately tested image. Optional modules such as Sync, TimeCode, TorrServer, JacRed, WebLog and SISI start disabled.
 
-An optional `LAMPAC_BUNNY_CONFIG_B64` can encode a customized `bunny/config/init.conf`. Base64 is not encryption. The runtime override wins over `config/base.conf` and code defaults; keep HTTP on `0.0.0.0:9118`. The bootstrap validates JSON and listener configuration, not the safety of every module.
+An optional `LAMPAC_BUNNY_CONFIG_B64` can encode a customized `bunny/config/init.conf`. Base64 is not encryption. The runtime override wins over `config/base.conf` and code defaults; keep the internal HTTP listener on `0.0.0.0:9118` and use `listen.scheme="https"` for advertised public URLs. Local HTTP-only development can advertise `http`. The bootstrap validates JSON and listener configuration, not the safety of every module.
 
 ## Security and persistence
 
-The root password protects administrative functions, but the starter configuration is not a universal API authentication gateway. Public CDN routes require reviewed access controls, route restrictions and rate limits. Protection against unrestricted proxy use remains unverified; do not share an unrestricted endpoint.
+The root password protects administrative functions, but the starter configuration is not a universal API authentication gateway. Public CDN routes require reviewed access controls, route restrictions and rate limits. Live unauthenticated generic relay checks returned 401/400/404; an authorized synthetic relay decoded successfully. Keep relay tokens private.
 
-Use one replica in one region for SQLite. `/lampac/database` is local SQLite, not Bunny Database. Maintain consistent backups and test restoration; never remove user data for acceptance tests. Restart/recovery, SQLite durability and .NET log inspection require a real running deployment. Destructive tests belong on a separate disposable instance.
+Use one replica in one region for SQLite. `/lampac/database` is local SQLite, not Bunny Database. Maintain consistent backups and test restoration; never remove user data for acceptance tests. Restart/recovery, SQLite durability and .NET log inspection were verified in the linked live report. Destructive tests belong on a separate disposable instance.
 
 Read [Security](SECURITY.md), [Architecture](ARCHITECTURE.md), [official deployment](https://bunny.net/docs/magic-containers/deploy), [persistent volumes](https://bunny.net/docs/magic-containers/persistent-volumes), and [Lampac documentation](https://docs.lampac.dev/).

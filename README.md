@@ -10,11 +10,11 @@
 <p align="center">
   <img alt="Bunny Magic Containers" src="https://img.shields.io/badge/Bunny-Magic_Containers-f59e0b">
   <img alt="linux amd64" src="https://img.shields.io/badge/image-linux%2Famd64-2563eb">
-  <a href="docs/acceptance/LIVE_BUNNY_ACCEPTANCE.md"><img alt="Live acceptance blocked" src="https://img.shields.io/badge/live_acceptance-BLOCKED-eab308"></a>
+  <a href="docs/acceptance/LIVE_BUNNY_ACCEPTANCE.md"><img alt="Live deployment verified" src="https://img.shields.io/badge/live_acceptance-PASS-22c55e"></a>
   <a href="LICENSE"><img alt="AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-64748b"></a>
 </p>
 
-**Live acceptance: BLOCKED — anonymous GHCR access is unavailable.** Real Bunny API access and European capacity were checked; deployment could not proceed through the public-image preflight. See the [dated evidence and remaining checks](docs/acceptance/LIVE_BUNNY_ACCEPTANCE.md). No production certification is claimed.
+**Live Deployment Verified · Bunny Magic Containers** — verified on **2026-11-04 UTC**. HTTPS, plugin loading, SQLite persistence, restart/crash recovery, repeat installation and administrative access checks passed. See the [live acceptance evidence and scope](docs/acceptance/LIVE_BUNNY_ACCEPTANCE.md).
 
 ## Quick start
 
@@ -26,22 +26,22 @@ curl -fsSL https://raw.githubusercontent.com/vbrekher/lampac-bunny/main/bunny/sc
 
 Get your **account API Key** from [Bunny Dashboard](https://dash.bunny.net/) → Account → API. Enter it at the hidden terminal prompt. Never paste credentials into an issue or chat.
 
-**Current prerequisite for the package owner:** make `ghcr.io/vbrekher/lampac-bunny` publicly pullable in [GitHub package settings](https://github.com/users/vbrekher/packages/container/lampac-bunny/settings). Then rerun the command. The installer refuses unavailable images before creating billable resources. Public access alone does not establish that the expected digest exists; the installer also checks the manifest bytes and `linux/amd64` platform.
+**Public image verified:** anonymous GHCR pulls, the exact pinned digest and `linux/amd64` platform were checked before real deployment. The installer uses the public registry without requiring a GitHub token.
 
 ## What the installer configures
 
 | Component | Configuration |
 | --- | --- |
 | Application | `lampac-bunny`, one shared instance, one available European region |
-| Image | `ghcr.io/vbrekher/lampac-bunny:v0.1.1`, pinned to the expected digest |
+| Image | `ghcr.io/vbrekher/lampac-bunny:v0.1.3`, pinned to the expected digest |
 | Network | Internal HTTP `9118`, public HTTPS CDN endpoint |
 | Storage | One 5 GB persistent volume at `/lampac/database` |
 | Credentials | Random `LAMPAC_ROOT_PASSWORD`; API Key is never saved |
-| Health | Startup, readiness and liveness probes on `/version?type=hash` |
+| Health | Startup, readiness and liveness probes on `/version` |
 
-The expected image digest is `sha256:ec518a9170c5f4b4373545851f2325f285ee0daa26af6cd4ffa5819200b12adc`; its availability is currently blocked by GHCR access. The LIGHT image excludes Chromium, FFmpeg and GStreamer. Optional stateful modules start disabled.
+The expected image digest is `sha256:25353ce71cf3bd5298877fd3b1cd40b2e9cbbeeaa8713fbedc126a02c69e66f2`; its anonymous availability and the deployed digest were verified on 2026-11-04 UTC. The LIGHT image excludes Chromium, FFmpeg and GStreamer. Optional stateful modules start disabled.
 
-Compute, storage and CDN usage are billed by Bunny. The installer reports the HTTPS URL only after `/version?type=hash` and `/online.js` return nonempty HTTP 200 responses. These smoke checks do not certify playback, persistence or security.
+Compute, storage and CDN usage are billed by Bunny. The installer waits for the exact pinned image in a ready Bunny pod, then checks nonempty HTTP 200 responses from `/version?type=hash` and `/online.js`. Explicit redeploy waits for a new pod. These smoke checks do not certify playback, persistence or security.
 
 ## Connect, reopen and update
 
@@ -55,7 +55,7 @@ To redeploy the same pinned release, with a longer startup wait:
 curl -fsSL https://raw.githubusercontent.com/vbrekher/lampac-bunny/main/bunny/scripts/install-bunny.sh | bash -s -- --redeploy --timeout 900
 ```
 
-This does not upgrade to an arbitrary newer image. Future image upgrades require a reviewed release with a new version and digest. Never silently overwrite `v0.1.1`.
+The installer recognizes v0.1.1/v0.1.2 deployments and upgrades them to the reviewed, pinned v0.1.3 release while retaining the volume, root password and CDN. Unknown images are refused. Published version tags are immutable.
 
 ## Troubleshooting
 
@@ -86,8 +86,8 @@ Read the deployment guides: [English](bunny/docs/DEPLOY.en.md) · [Русски�
 ## Deployment boundaries
 
 - SQLite requires **one replica in one region**. Persistent volumes need separate backup and restore drills; Bunny Database is not a drop-in replacement.
-- A public CDN endpoint is not an authentication boundary. The generated root password does not protect every media API. Review route restrictions, authentication and rate limits before sharing the URL. Unrestricted proxy protection remains unverified.
-- Catalogs, providers, actual Lampa playback, restart recovery and SQLite durability are **not live-verified**. HTTP 200 alone cannot establish media playback.
+- A public CDN endpoint is not an authentication boundary. The generated root password does not protect every media API. Review route restrictions, authentication and rate limits before sharing the URL. Live generic relay checks rejected unauthenticated requests; an authorized synthetic relay decoded successfully.
+- The browser Lampa client and CUB catalogs loaded, SQLite survived restart/reinstallation, and 72 synthetic video frames were decoded through Lampac. Individual providers and physical TV hardware require separate validation.
 - Torrent/P2P, DLNA, browser automation and enhanced media tools require separate images or platform validation.
 
 ## Explore Our Other Open-Source Projects
