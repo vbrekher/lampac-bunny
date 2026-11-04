@@ -49,6 +49,10 @@ class FakeAPI:
             return {"id": "mock-app-id"}
         if method == "POST" and path.endswith("/deploy"):
             return {}
+        if method == "GET" and path.endswith("/overview"):
+            return {"status": "active", "regions": [{"pods": [{"name": "mock-pod", "status": "ready", "containers": [{
+                "name": m.CONTAINER_NAME, "status": "ready", "image": m.IMAGE + "@" + m.IMAGE_DIGEST
+            }]}]}]}
         if method == "GET" and path.startswith("/apps/"):
             return {
                 "id": "mock-app-id", "name": m.APP_NAME,
@@ -214,6 +218,23 @@ class InstallerTests(unittest.TestCase):
         self.assertEqual(changed["environmentVariables"], container["environmentVariables"])
         self.assertEqual(changed["volumeMounts"], container["volumeMounts"])
         self.assertEqual(changed["imageDigest"], m.IMAGE_DIGEST)
+
+    def test_unmasked_key_prompt_is_refused(self):
+        with mock.patch.dict(os.environ, {}, clear=True), mock.patch.object(m.sys, "argv", ["deploy_bunny.py"]), \
+             mock.patch.object(m.getpass, "getpass", side_effect=m.getpass.GetPassWarning("cannot hide input")), \
+             mock.patch.object(m, "install") as install:
+            self.assertEqual(m.main(), 2)
+            install.assert_not_called()
+
+    def test_ready_requires_target_digest_and_new_pod_after_restart(self):
+        api = FakeAPI()
+        self.assertTrue(m.deployment_ready(api, "mock-app-id"))
+        self.assertFalse(m.deployment_ready(api, "mock-app-id", {"mock-pod"}))
+        self.assertTrue(m.deployment_ready(api, "mock-app-id", {"old-pod"}))
+        api.call = lambda *args: {"status": "active", "regions": [{"pods": [{"name": "old-pod", "status": "ready", "containers": [{
+            "name": m.CONTAINER_NAME, "status": "ready", "image": m.LEGACY_IMAGE + "@" + m.LEGACY_DIGEST
+        }]}]}]}
+        self.assertFalse(m.deployment_ready(api, "mock-app-id"))
 
     def test_ambiguous_apps_refused(self):
         api = FakeAPI()

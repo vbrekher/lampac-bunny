@@ -17,6 +17,7 @@ import re
 import secrets
 import sys
 import time
+import warnings
 from urllib import error, parse, request
 
 API_BASE = "https://api.bunny.net/mc"
@@ -333,6 +334,23 @@ def check_http(url: str) -> bool:
     return True
 
 
+def pod_names(api: BunnyAPI, app_id: str) -> set:
+    overview = api.call("GET", "/apps/" + parse.quote(app_id, safe="") + "/overview")
+    return {p.get("name") for r in overview.get("regions", []) for p in r.get("pods", []) if p.get("name")}
+
+
+def deployment_ready(api: BunnyAPI, app_id: str, previous_pods: set | None = None) -> bool:
+    overview = api.call("GET", "/apps/" + parse.quote(app_id, safe="") + "/overview")
+    if str(overview.get("status", "")).lower() != "active":
+        return False
+    return any(
+        p.get("status") == "ready" and (not previous_pods or p.get("name") not in previous_pods)
+        and any(c.get("name") == CONTAINER_NAME and c.get("status") == "ready"
+                and IMAGE_DIGEST in str(c.get("image", "")) for c in p.get("containers", []))
+        for r in overview.get("regions", []) for p in r.get("pods", [])
+    )
+
+
 def install(api: BunnyAPI, *, region: str | None, state_path: Path = STATE_FILE,
             verify_image: bool = True, poll: bool = True,
             timeout: int = 600, redeploy: bool = False) -> str:
@@ -346,6 +364,7 @@ def install(api: BunnyAPI, *, region: str | None, state_path: Path = STATE_FILE,
         print("PASS: GHCR image is publicly pullable with verified digest and linux/amd64 platform")
 
     saved = read_state(state_path)
+    previous_pods = None
     if saved and existing and saved["appId"] != existing["id"]:
         raise InstallerError("Local app ID differs from Bunny app of same name; refusing changes")
     if saved and not existing:
@@ -362,6 +381,7 @@ def install(api: BunnyAPI, *, region: str | None, state_path: Path = STATE_FILE,
             "imageTag", "imageDigest", "imageRegistryId"
         )) or (startup.get("httpGet") or {}).get("request", {}).get("path") != "/version"
         if configuration_changed:
+            previous_pods = pod_names(api, app_id) if poll else None
             if not container.get("id"):
                 raise InstallerError("Existing container has no ID; cannot repair configuration safely")
             # Full app patch applies one revision. Keep the container ID, environment,
@@ -418,6 +438,8 @@ def install(api: BunnyAPI, *, region: str | None, state_path: Path = STATE_FILE,
 
     if should_deploy:
         print("Starting deployment...")
+        if existing and redeploy and previous_pods is None and poll:
+            previous_pods = pod_names(api, app_id)
         route = "/restart" if existing and full.get("status") == "active" else "/deploy"
         # An app PATCH already starts the active deployment's new revision.
         if not (existing and configuration_changed and full.get("status") == "active"):
@@ -437,7 +459,7 @@ def install(api: BunnyAPI, *, region: str | None, state_path: Path = STATE_FILE,
     attempt = 0
     while time.monotonic() < deadline:
         url = endpoint_url(api, app_id)
-        if url and check_http(url):
+        if url and deployment_ready(api, app_id, previous_pods) and check_http(url):
             print("PASS: HTTPS health endpoint and online.js respond with HTTP 200")
             print("Your Lampac Bunny URL:", url)
             print("LAMPAC_BUNNY_BUNNY_DEPLOY_PASS")
@@ -466,10 +488,12 @@ def main() -> int:
     if args.timeout < 1:
         parser.error("--timeout must be positive")
     try:
-        key = os.environ.get("BUNNY_API_KEY") or os.environ.get("BUNNYNET_API_KEY") or getpass.getpass(
-            "Enter Bunny account API Key (hidden): "
-        ).strip()
-    except (EOFError, KeyboardInterrupt):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", getpass.GetPassWarning)
+            key = os.environ.get("BUNNY_API_KEY") or os.environ.get("BUNNYNET_API_KEY") or getpass.getpass(
+                "Enter Bunny account API Key (hidden): "
+            ).strip()
+    except (EOFError, KeyboardInterrupt, getpass.GetPassWarning):
         print("Bunny API Key input cancelled. Run from an interactive terminal.", file=sys.stderr)
         return 2
     try:
