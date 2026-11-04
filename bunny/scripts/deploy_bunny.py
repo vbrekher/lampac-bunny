@@ -379,7 +379,7 @@ def install(api: BunnyAPI, *, region: str | None, state_path: Path = STATE_FILE,
         startup = (container.get("probes") or {}).get("startup") or {}
         configuration_changed = any(container.get(k) != desired[k] for k in (
             "imageTag", "imageDigest", "imageRegistryId"
-        )) or (startup.get("httpGet") or {}).get("request", {}).get("path") != "/version"
+        )) or (startup.get("httpGet") or {}).get("request", {}).get("path") != "/version" or not container.get("endpoints")
         if configuration_changed:
             previous_pods = pod_names(api, app_id) if poll else None
             if not container.get("id"):
@@ -400,7 +400,7 @@ def install(api: BunnyAPI, *, region: str | None, state_path: Path = STATE_FILE,
                 "isSslEnabled": e.get("isSslEnabled", True), "pullZoneId": int(e["pullZoneId"]),
                 "portMappings": [{"containerPort": p["containerPort"], "exposedPort": p.get("exposedPort") or 443}
                                  for p in e["portMappings"]],
-            }} for e in endpoints]
+            }} for e in endpoints] if endpoints else desired["endpoints"]
             api.call("PATCH", "/apps/" + parse.quote(app_id, safe=""), {"containerTemplates": [updated]})
             print("Updated matching container to the pinned release and public GHCR registry; volume retained.")
             if saved:

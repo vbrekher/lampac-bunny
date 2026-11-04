@@ -61,6 +61,7 @@ class FakeAPI:
                     "name": m.CONTAINER_NAME, "imageName": "lampac-bunny",
                     "imageNamespace": "vbrekher", "imageTag": m.IMAGE_TAG, "imageDigest": m.IMAGE_DIGEST,
                     "probes": m.create_payload("AMS", "42", "test")["containerTemplates"][0]["probes"],
+                    "endpoints": [{"displayName": "lampac-http", "type": "cdn", "pullZoneId": "88", "isSslEnabled": True, "portMappings": [{"containerPort": 9118, "exposedPort": None}]}],
                 }],
                 "displayEndpoint": {"address": "mc-mock.bunny.run"},
             }
@@ -235,6 +236,27 @@ class InstallerTests(unittest.TestCase):
             "name": m.CONTAINER_NAME, "status": "ready", "image": m.LEGACY_IMAGE + "@" + m.LEGACY_DIGEST
         }]}]}]}
         self.assertFalse(m.deployment_ready(api, "mock-app-id"))
+
+    def test_partial_app_missing_cdn_is_repaired_without_new_app_or_volume(self):
+        api = FakeAPI(app={"id": "existing", "name": m.APP_NAME})
+        c = m.create_payload("AMS", "42", "test-existing-password")["containerTemplates"][0]
+        c.update(id="container-existing", endpoints=[])
+        changes = []
+        def call(method, path, body=None):
+            if method == "GET": return {"id": "existing", "status": "active", "containerTemplates": [c]}
+            if method == "PATCH": changes.append(body);return {"id": "existing"}
+            raise AssertionError("CDN recovery must not create another app or volume")
+        api.call = call
+        with tempfile.TemporaryDirectory() as d:
+            m.install(api, region=None, state_path=Path(d) / "state.json", verify_image=False, poll=False)
+        self.assertEqual(len(changes), 1)
+        patch = changes[0]
+        self.assertNotIn("volumes", patch)
+        repaired = patch["containerTemplates"][0]
+        self.assertEqual(repaired["id"], "container-existing")
+        self.assertEqual(repaired["volumeMounts"], c["volumeMounts"])
+        self.assertTrue(repaired["endpoints"][0]["cdn"]["isSslEnabled"])
+        self.assertEqual(repaired["endpoints"][0]["cdn"]["portMappings"][0]["containerPort"], 9118)
 
     def test_ambiguous_apps_refused(self):
         api = FakeAPI()
