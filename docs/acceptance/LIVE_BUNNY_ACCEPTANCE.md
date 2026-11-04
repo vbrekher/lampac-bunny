@@ -46,7 +46,6 @@ Verified at **2026-11-04T00:41:32.557951+00:00 UTC** against real Bunny Magic Co
 | physical tv clients | NOT_TESTED | No physical Samsung/Tizen/other TV hardware was tested. |
 | all third party providers | NOT_TESTED | Individual provider catalogs, subscriptions, content rights and all formats are outside this acceptance scope. |
 | cross machine concurrent install | NOT_TESTED | Local lock tested by design; no distributed account-wide create transaction is claimed. |
-
 | cloud failure injection | NOT_TESTED | Regional exhaustion and CDN provisioning failures were not forcibly injected into the live account; offline failure/recovery tests and real successful provisioning were completed. |
 
 ## HTTP and TLS observations
