@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import stat
+import subprocess
 import tempfile
 import unittest
 from unittest import mock
@@ -257,6 +258,21 @@ class InstallerTests(unittest.TestCase):
         self.assertEqual(repaired["volumeMounts"], c["volumeMounts"])
         self.assertTrue(repaired["endpoints"][0]["cdn"]["isSslEnabled"])
         self.assertEqual(repaired["endpoints"][0]["cdn"]["portMappings"][0]["containerPort"], 9118)
+
+    def test_piped_bash_download_path_and_arguments(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d); binpath = root / "bin"; binpath.mkdir()
+            python = binpath / "python3"
+            python.write_text('#!/bin/sh\n[ "$1" = "-c" ] && exit 0\nprintf "%s\\n" "$*" > "$MOCK_INSTALL_PYTHON"\n')
+            curl = binpath / "curl"
+            curl.write_text('#!/bin/sh\nprintf "%s\\n" "$*" > "$MOCK_INSTALL_CURL"\nwhile [ "$#" -gt 0 ]; do\n if [ "$1" = "-o" ]; then shift; printf "# downloaded test fixture\\n" > "$1"; exit 0; fi\n shift\ndone\nexit 1\n')
+            python.chmod(0o755);curl.chmod(0o755)
+            env = os.environ.copy();env.update(PATH=str(binpath)+os.pathsep+env["PATH"], MOCK_INSTALL_PYTHON=str(root/"python.out"), MOCK_INSTALL_CURL=str(root/"curl.out"))
+            body = (MODULE.parent / "install-bunny.sh").read_text()
+            result = subprocess.run(["bash", "-s", "--", "--timeout", "900"], input=body, env=env, text=True, capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("--timeout 900", (root/"python.out").read_text())
+            self.assertIn("661cee831b9d35b6d8b94043346a17683f073a91", (root/"curl.out").read_text())
 
     def test_ambiguous_apps_refused(self):
         api = FakeAPI()
