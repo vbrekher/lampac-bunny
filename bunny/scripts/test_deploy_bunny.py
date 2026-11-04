@@ -55,7 +55,8 @@ class FakeAPI:
                 "containerTemplates": [{
                     "id": "container-id", "imageRegistryId": "42",
                     "name": m.CONTAINER_NAME, "imageName": "lampac-bunny",
-                    "imageNamespace": "vbrekher", "imageTag": "v0.1.1",
+                    "imageNamespace": "vbrekher", "imageTag": m.IMAGE_TAG, "imageDigest": m.IMAGE_DIGEST,
+                    "probes": m.create_payload("AMS", "42", "test")["containerTemplates"][0]["probes"],
                 }],
                 "displayEndpoint": {"address": "mc-mock.bunny.run"},
             }
@@ -74,7 +75,7 @@ class InstallerTests(unittest.TestCase):
         c = p["containerTemplates"][0]
         self.assertEqual(c["volumeMounts"], [{"name": m.VOLUME_NAME, "mountPath": "/lampac/database"}])
         self.assertEqual(c["endpoints"][0]["cdn"]["portMappings"][0]["containerPort"], 9118)
-        self.assertEqual(c["probes"]["readiness"]["httpGet"]["request"]["path"], "/version?type=hash")
+        self.assertEqual(c["probes"]["readiness"]["httpGet"]["request"]["path"], "/version")
         self.assertEqual(c["imageRegistryId"], "42")
 
     def test_no_non_european_fallback(self):
@@ -96,7 +97,7 @@ class InstallerTests(unittest.TestCase):
             api = FakeAPI()
             app_id = m.install(api, region=None, state_path=state_path)
             self.assertEqual(app_id, "mock-app-id")
-            self.assertEqual(api.created["containerTemplates"][0]["imageTag"], "v0.1.1")
+            self.assertEqual(api.created["containerTemplates"][0]["imageTag"], m.IMAGE_TAG)
             state = json.loads(state_path.read_text())
             self.assertEqual(state["appId"], "mock-app-id")
             self.assertTrue(state["deployed"])
@@ -186,6 +187,33 @@ class InstallerTests(unittest.TestCase):
     def test_startup_probe_allows_cold_module_compilation(self):
         c = m.create_payload("AMS", "42", "offline-test-password")["containerTemplates"][0]
         self.assertGreaterEqual(c["probes"]["startup"]["failureThreshold"] * c["probes"]["startup"]["periodSeconds"], 600)
+
+    def test_legacy_upgrade_retains_credentials_and_cdn_volume_mount(self):
+        api = FakeAPI(app={"name": m.APP_NAME, "id": "existing"})
+        container = m.create_payload("AMS", "42", "test-existing-root-password")["containerTemplates"][0]
+        container.update(id="existing-container", imageTag="v0.1.1", imageDigest=m.LEGACY_DIGEST)
+        container["endpoints"] = [{"displayName": "lampac-http", "type": "cdn", "pullZoneId": "88", "isSslEnabled": True,
+                                   "portMappings": [{"containerPort": 9118, "exposedPort": None}]}]
+        calls = []
+        def call(method, path, body=None):
+            calls.append((method, path, body))
+            if method == "GET": return {"id": "existing", "status": "active", "containerTemplates": [container]}
+            if method == "PATCH": return {"id": "existing"}
+            raise AssertionError("Upgrade must not create resources or issue a second deployment")
+        api.call = call
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "state.json"
+            m.save_state({"appId": "existing", "image": m.LEGACY_IMAGE, "password": "test-existing-root-password", "deployed": True}, path)
+            m.install(api, region=None, state_path=path, verify_image=False, poll=False)
+            state = m.read_state(path)
+            self.assertEqual(state["image"], m.IMAGE)
+            self.assertEqual(state["password"], "test-existing-root-password")
+        changed = next(c[2]["containerTemplates"][0] for c in calls if c[0] == "PATCH")
+        self.assertEqual(changed["id"], "existing-container")
+        self.assertEqual(changed["endpoints"][0]["cdn"]["pullZoneId"], 88)
+        self.assertEqual(changed["environmentVariables"], container["environmentVariables"])
+        self.assertEqual(changed["volumeMounts"], container["volumeMounts"])
+        self.assertEqual(changed["imageDigest"], m.IMAGE_DIGEST)
 
     def test_ambiguous_apps_refused(self):
         api = FakeAPI()

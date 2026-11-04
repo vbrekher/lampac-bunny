@@ -7,7 +7,7 @@ sh -n "$ROOT_DIR/bunny/docker-entrypoint.sh"
 for script in "$ROOT_DIR/bunny/scripts/build-image.sh" "$ROOT_DIR/bunny/scripts/smoke.sh" "$ROOT_DIR/bunny/scripts/doctor.sh" "$ROOT_DIR/bunny/scripts/local-acceptance.sh"; do
   bash -n "$script"
 done
-jq -e '.listen.port == 9118 and .listen.scheme == "http" and (.BaseModule.SkipModules | index("TorrServer") != null)' "$ROOT_DIR/bunny/config/init.conf" >/dev/null
+jq -e '.listen.port == 9118 and .listen.scheme == "https" and (.BaseModule.SkipModules | index("TorrServer") != null)' "$ROOT_DIR/bunny/config/init.conf" >/dev/null
 
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
@@ -21,7 +21,8 @@ sh "$entry" --configure-only >/dev/null
 mode=$(stat -c %a "$work/lampac/passwd" 2>/dev/null || stat -f %Lp "$work/lampac/passwd")
 [ "$mode" = 600 ]
 [ "$(jq -r '.listen.port' "$work/lampac/init.conf")" = 9118 ]
-printf 'PASS: default bootstrap\n'
+[ "$(jq -r '.listen.scheme' "$work/lampac/init.conf")" = https ]
+printf 'PASS: default bootstrap with HTTPS client URLs\n'
 
 cp "$work/lampac/init.conf" "$work/saved.conf"
 export LAMPAC_BUNNY_CONFIG_B64

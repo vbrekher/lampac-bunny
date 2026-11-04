@@ -32,9 +32,9 @@ else
   cp "$TEMPLATE" "$config_tmp" || fail "Cannot copy default configuration"
 fi
 
-# Bunny's HTTP(S) endpoint forwards to HTTP on port 9118. Fail closed on incompatible overrides.
-jq -e 'type == "object" and (.listen | type == "object" and (.port == 9118) and ((.ip == "0.0.0.0") or (.ip == "any")) and (.scheme == "http"))' "$config_tmp" >/dev/null \
-  || fail "init.conf must be valid JSON and listen on http://0.0.0.0:9118 (or ip=any)"
+# Kestrel binds plain HTTP on 9118; listen.scheme controls advertised client URLs.
+jq -e 'type == "object" and (.listen | type == "object" and (.port == 9118) and ((.ip == "0.0.0.0") or (.ip == "any")) and ((.scheme == "http") or (.scheme == "https")))' "$config_tmp" >/dev/null \
+  || fail "init.conf must use port 9118, ip=0.0.0.0 (or any), and an http/https advertised scheme"
 
 printf '%s' "$LAMPAC_ROOT_PASSWORD" > "$pass_tmp" || fail "Cannot write root password"
 chmod 0600 "$config_tmp" "$pass_tmp"
