@@ -1,109 +1,79 @@
-# Lampac Bunny — installeren op bunny.net (NL)
+# Lampac Bunny — installeren op Bunny
 
-## Automatische installatie — één opdracht
+## Snel beginnen
 
-Plak deze opdracht in de Terminal op macOS of Linux:
+Vereist: macOS of Linux, Bash, curl, **Python 3.10+** en een Bunny-account dat Magic Containers mag aanmaken. Configuratie van Docker, GitHub, een VPS of SSH is niet nodig.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/vbrekher/lampac-bunny/main/bunny/scripts/install-bunny.sh | bash
 ```
 
-Voer je **Bunny account API Key** in bij de verborgen vraag (Bunny Dashboard → Account → API). Docker of een GitHub-token is niet nodig. Het script controleert de openbare GHCR-image en SHA-256, kiest een beschikbare Europese regio (eerst NL), koppelt de registry, maakt één instantie, een **5 GB** persistent SQLite-volume op `/lampac/database`, een HTTPS-CDN-endpoint voor poort `9118` en een uniek beheerderswachtwoord. De installatie is pas geslaagd als beide HTTP-controles antwoord 200 geven.
+Haal de **API-sleutel van het account** op via [Bunny Dashboard](https://dash.bunny.net/), bij de accountinstellingen en API. Voer deze in bij de verborgen invoer in de terminal. Het installatieprogramma stuurt de sleutel alleen naar Bunny, slaat deze nooit op en weigert omleidingen van verzoeken met de sleutel. De omgevingsvariabelen `BUNNY_API_KEY` en `BUNNYNET_API_KEY` worden ondersteund voor automatisering; zet geen letterlijke geheimen in de opdrachtgeschiedenis.
 
-Maak het pakket `lampac-bunny` in GitHub Packages eerst **Public**. Een privéimage kan niet met alleen een Bunny-sleutel worden gedownload; het script stopt dan voordat er kosten ontstaan. De Bunny API Key wordt niet bewaard. Het app-wachtwoord staat alleen lokaal in `~/.config/lampac-bunny/deployment.json` met rechten 0600. Een herhaalde installatie maakt geen duplicaat.
+**Live-acceptatie: PASS.** Geverifieerd op **2026-11-04 UTC** op echte Bunny-infrastructuur in **AMS** met het vastgelegde **v0.1.3**-image. HTTPS, JavaScript en de plug-in, SQLite-behoud, herstel na herstart en uitval, herhaalde installatie en afgeschermde beheerroutes zijn gecontroleerd. Zie het [rapport](../../docs/acceptance/LIVE_BUNNY_ACCEPTANCE.md) en het [JSON-bewijs](../../docs/acceptance/live-bunny-results.json). Fysieke televisies en alle afzonderlijke aanbieders zijn niet getest.
 
-Magic Containers, CDN en opslag kunnen kosten veroorzaken. Het CDN-adres is openbaar; beveilig de beheerfuncties voordat je het deelt. HTTP-controles bewijzen niet dat videobronnen of afspelen werken.
+Anonieme openbare GHCR-toegang is geverifieerd. Het installatieprogramma kiest het openbare GitHub-register en vereist geen GitHub-inloggegevens.
 
+## Automatische configuratie
 
-Lampac Bunny is een **zelfstandige Lampac-backend**. Het project is niet afhankelijk van Lampa Multilingual Edition en kan door elke geschikte client worden gebruikt. Gebruik uitsluitend mediabronnen waarvoor je toestemming hebt.
+Het installatieprogramma controleert `ghcr.io/vbrekher/lampac-bunny:v0.1.3`, de verwachte digest `sha256:25353ce71cf3bd5298877fd3b1cd40b2e9cbbeeaa8713fbedc126a02c69e66f2` en `linux/amd64`. Het legt de digest vast in de Bunny-configuratie, kiest één beschikbare Europese regio met AMS als eerste voorkeur, koppelt GHCR en maakt het volgende aan:
 
-> **Status:** de broncode en offline controles zijn voorbereid. Een echte Bunny-deployment, de werking van mediabronnen, afspelen en gegevensherstel zijn **nog niet gevalideerd**. Stel de server niet onbeschermd bloot aan het internet.
+- Eén applicatie `lampac-bunny` met gedeelde uitvoering en zowel minimum als maximum op één replica.
+- Eén permanent volume van 5 GB op `/lampac/database`.
+- Interne HTTP-poort `9118` en een publiek CDN-eindpunt met HTTPS.
+- Een willekeurig `LAMPAC_ROOT_PASSWORD` en controles voor opstarten, gereedheid en beschikbaarheid op `/version`.
 
+Bunny brengt rekenkracht, opslag en CDN-verkeer in rekening. Het installatieprogramma wacht maximaal 600 seconden op niet-lege HTTP 200-antwoorden van `/version?type=hash` en `/online.js`. Dit is een basiscontrole, geen volledige acceptatie.
 
-## Read-only-bestandssysteem van Docker Desktop herstellen
+## Serveradres en verbinding
 
-In het aangeleverde logboek trad de fout op in de **opslag van Docker Desktop**, niet bij GitHub of NuGet: `dpkg: Input/output error`, `NuGet: Read-only file system`, daarna `metadata_v2.db: read-only file system`.
+De URL verschijnt in de terminal en onder **Magic Containers → lampac-bunny → Endpoints**. Voeg `https://YOUR-ENDPOINT/online.js` toe bij de plug-ininstellingen van een compatibele Lampa-client. Test catalogi en afspelen afzonderlijk met toegestane inhoud; een geslaagd API-verzoek bewijst niet dat video afspeelt.
 
-1. **Start Docker Desktop opnieuw**, zonder Factory Reset of volumes van andere projecten te wissen.
-2. Voer `bash bunny/scripts/doctor.sh` uit (diagnose, verwijdert niets).
-3. Controleer de vrije ruimte op uw Mac en ga naar **Docker Desktop → Settings → Resources → Advanced**. Vergroot of verplaats de virtuele schijf via Docker Desktop, niet via Finder.
-4. Wanneer Docker weer werkt, kunt u eventueel `docker builder prune` interactief uitvoeren om **ongebruikte buildcaches** te verwijderen. Voer **niet** `docker system prune --volumes` uit.
-5. Bouw opnieuw nadat u de repository hebt bijgewerkt:
+Het gegenereerde wachtwoord en de uitrolgegevens staan in `~/.config/lampac-bunny/deployment.json`, of onder `XDG_CONFIG_HOME`, met rechten `0600`. Bewaar een beveiligde reservekopie. Publiceer dit bestand of de sleutels nooit.
+
+## Opnieuw openen, herstellen en bijwerken
+
+Herhaal de oorspronkelijke opdracht om de bestaande passende applicatie te vinden en de volumes te behouden. Een onvoltooide of inactieve uitrol wordt opnieuw gestart. Bij een ander image, dubbele namen of afwijkende lokale gegevens stopt het programma voor inspectie.
 
 ```bash
-git pull --ff-only
-bash bunny/scripts/doctor.sh
+# Hetzelfde vastgelegde image opnieuw uitrollen; 15 minuten wachten op HTTPS.
+curl -fsSL https://raw.githubusercontent.com/vbrekher/lampac-bunny/main/bunny/scripts/install-bunny.sh | bash -s -- --redeploy --timeout 900
+# Regio voor een nieuwe applicatie, indien capaciteit beschikbaar is.
+curl -fsSL https://raw.githubusercontent.com/vbrekher/lampac-bunny/main/bunny/scripts/install-bunny.sh | bash -s -- --region DE
+```
+
+Een lokale vergrendeling voorkomt gelijktijdige installaties op één computer. Start het aanmaken niet tegelijk vanaf meerdere computers. Controleer na een time-out bij het aanmaken eerst het dashboard. Verwijder bestaande applicaties of volumes niet om te herstellen. Bekende v0.1.1/v0.1.2-uitrollen worden naar de beoordeelde vastgelegde v0.1.3-versie bijgewerkt, met behoud van volume, wachtwoord, CDN en eigen configuratie. Andere images worden geweigerd. Gepubliceerde tags worden niet overschreven.
+
+## Problemen oplossen
+
+| Probleem | Actie |
+| --- | --- |
+| Bunny 401/403 | Controleer de API-sleutel van het account en de toegang tot Magic Containers |
+| GHCR onbereikbaar of afwijkende digest | Controleer openbare pakkettoegang; omzeil de digestcontrole niet |
+| Geen capaciteit | Probeer later opnieuw of kies een beschikbare Europese regio |
+| Time-out bij opstarten of HTTPS | Controleer containerstatus, gezondheidscontroles, CDN-eindpunt en logboeken; verleng de wachttijd |
+| Onderbroken installatie | Herhaal de opdracht; de bestaande applicatie en het volume worden hergebruikt |
+| Afwijkende lokale gegevens | Vergelijk de beveiligde lokale gegevens met de applicatie in Bunny vóór wijzigingen |
+| Docker-schijf is alleen-lezen | Voer `bash bunny/scripts/doctor.sh` uit en herstel Docker-opslag met behoud van volumes |
+
+## Lokale ontwikkeling en configuratie
+
+```bash
 bash bunny/scripts/preflight.sh
-bash bunny/scripts/build-image.sh ghcr.io/vbrekher/lampac-bunny:v0.1.1 --load
+python3 bunny/scripts/test_deploy_bunny.py
+bash bunny/scripts/test-local-acceptance.sh
+# Gebruik een eigen nieuwe versietag:
+bash bunny/scripts/build-image.sh YOUR-REGISTRY/lampac-bunny:NEW-VERSION --load
 ```
 
-De nieuwe `bunny/Dockerfile` bouwt een **LIGHT-image** op basis van de volledige Lampac-broncode en officiële .NET 10-images, maar bevat **geen** Chromium, GStreamer of FFmpeg. Deze modules zijn in de standaardconfiguratie uitgeschakeld. Schakel ze niet in met een JSON-override; een afzonderlijk geteste uitgebreide image is nodig. Blijft de VM na een herstart read-only, onderzoek de Docker-schijf zonder volumes zomaar te wissen.
+`--push` publiceert na aanmelding bij het register. De lichte broncodebouw gebruikt .NET 10 en bevat geen Chromium, FFmpeg of GStreamer. Gebruik daarvoor een afzonderlijk getest image. Optionele modules zoals Sync, TimeCode, TorrServer, JacRed, WebLog en SISI zijn aanvankelijk uitgeschakeld.
 
-**v0.1.1 oplossing voor de containergebruiker:** Ubuntu in de .NET 10-basisimage heeft al een groep met GID 1000. De Dockerfile gebruikt daarom de bestaande niet-rootgebruiker `app` in plaats van een conflicterende groep te maken. Voer `bash bunny/scripts/local-acceptance.sh` uit voor een lokale test die direct stopt bij een bouwfout.
+Met `LAMPAC_BUNNY_CONFIG_B64` kunt u een aangepast `bunny/config/init.conf` doorgeven. Base64 is geen versleuteling. De actieve configuratie heeft voorrang op `config/base.conf` en de standaardwaarden in de code; behoud intern HTTP op `0.0.0.0:9118` en gebruik `listen.scheme="https"` voor openbare URL’s. Voor lokale ontwikkeling zonder TLS kunt u `http` adverteren. Het opstartscript controleert JSON en luisterinstellingen, niet de veiligheid van elke module.
 
-**Opnieuw testen zonder hercompilatie:** na een geslaagde Docker-build maar een vroege HTTP-fout, voer `bash bunny/scripts/local-acceptance.sh --no-build` uit met `LAMPAC_ROOT_PASSWORD` ingesteld. Het script blijft tijdens het opstarten proberen en toont de containerstatus en logboeken bij een fout. Een vroege curl-fout (52) bewijst niet dat Lampac defect is.
+## Beveiliging en gegevens
 
-## 1. Zelf de Docker-image bouwen
+Het hoofdwachtwoord beschermt beheerfuncties, maar de beginconfiguratie biedt geen universele authenticatie voor alle API-routes. Publieke CDN-routes vereisen beoordeelde toegangsbeveiliging, routebeperkingen en aanvraaglimieten. Live verzoeken zonder authenticatie naar algemene relays gaven 401/400/404; een geautoriseerde synthetische stroom werd succesvol gedecodeerd. Houd relaytokens geheim.
 
-Benodigd: Git, Bash, Docker met buildx en `jq` voor de offline controle.
+Gebruik één replica in één regio voor SQLite. `/lampac/database` bevat lokale SQLite, niet Bunny Database. Maak consistente reservekopieën en test herstel. Verwijder nooit gebruikersgegevens voor acceptatietests. Herstart, SQLite-behoud en .NET-logcontrole zijn geverifieerd in het gekoppelde live-rapport. Voer destructieve tests alleen uit op een afzonderlijk wegwerpexemplaar.
 
-```bash
-git clone https://github.com/vbrekher/lampac-bunny.git
-cd lampac-bunny
-bash bunny/scripts/preflight.sh
-bash bunny/scripts/build-image.sh ghcr.io/vbrekher/lampac-bunny:v0.1.1 --load
-# Publiceren na docker login ghcr.io:
-bash bunny/scripts/build-image.sh ghcr.io/vbrekher/lampac-bunny:v0.1.1 --push
-```
-
-Met `--load` blijft de image lokaal; `--push` publiceert deze in de containerregistry. De image wordt gebouwd uit de .NET-broncode van deze fork. Vanwege de browser- en mediaonderdelen kan de build veel schijfruimte gebruiken.
-
-Voor een lokale test:
-
-```bash
-export LAMPAC_ROOT_PASSWORD="$(openssl rand -hex 24)"
-docker compose -f bunny/compose.yaml up --build -d
-curl -fsS 'http://127.0.0.1:9118/version?type=hash'
-```
-
-Zet wachtwoorden nooit in Git of openbare logs.
-
-## 2. Deployment in Bunny Magic Containers
-
-Open [Bunny Dashboard](https://dash.bunny.net/) → **Magic Containers → Add App**:
-
-1. Selecteer de gepubliceerde **linux/amd64** image `ghcr.io/vbrekher/lampac-bunny:v0.1.1`. Koppel GHCR als deze privé is.
-2. Maak **één CDN-endpoint** aan met containerpoort **9118**. Het externe adres gebruikt HTTPS; binnen de container draait HTTP.
-3. Voeg een persistent volume toe met pad `/lampac/database` (bijvoorbeeld 5 GB). Een tweede volume `/lampac/cache` is optioneel (bijvoorbeeld 2 GB). Een proefaccount ondersteunt slechts één volume.
-4. Stel de omgevingsvariabele `LAMPAC_ROOT_PASSWORD` in op een uniek geheim van minimaal 16 tekens.
-5. Gebruik **één regio, één replica en geen autoscaling**. SQLite van Lampac is geen gedeelde database.
-6. Stel Startup/Readiness/Liveness HTTP-controles in: pad `/version?type=hash`, poort 9118 en voldoende opstarttijd.
-7. Stel vóór openbare toegang authenticatie, snelheidslimieten en routebeperkingen in. Een CDN-endpoint is standaard publiek toegankelijk.
-8. Deploy de container, controleer de logs en voer uit:
-
-```bash
-bash bunny/scripts/smoke.sh 'https://YOUR-CONTAINER-ENDPOINT'
-```
-
-Deze test controleert de service en `/online.js`, niet de echte beschikbaarheid van video.
-
-## 3. Modules en eigen instellingen
-
-Het startprofiel schakelt risicovolle of stateful modules uit, onder andere TorrServer, JacRed, Sync, TimeCode, GStreamer, DLNA, WebLog en SISI. De broncode blijft aanwezig; activeer modules pas na controle van beveiliging, netwerk en capaciteit.
-
-Wijzig een lokale kopie van `bunny/config/init.conf` en encodeer deze:
-
-```bash
-base64 < bunny/config/init.conf | tr -d '\n'
-```
-
-Plaats de uitkomst in de Bunny-omgevingsvariabele `LAMPAC_BUNNY_CONFIG_B64`. De JSON moet geldig zijn en luisteren op HTTP `0.0.0.0:9118` (of `ip=any`). Ongeldige configuratie wordt geweigerd. Herstart de container om wijzigingen toe te passen. Plaats geen geheimen in het configuratiebestand.
-
-## 4. Opslag en beperkingen
-
-- `/lampac/database` bevat de lokale SQLite-bestanden; dit is **geen Bunny Database**. Een directe integratie met Bunny Database bestaat nog niet.
-- Bunny-volumes hebben **geen automatische back-ups of replicatie**. Replicas krijgen ieder een eigen volume. Maak offline back-ups en test het herstel.
-- Torrent/P2P, DLNA/multicast, specifieke netwerkpoorten en transcoding kunnen beperkt worden door Magic Containers. Ondersteuning is nog niet aangetoond.
-- Voorkom een onbeveiligde open proxy. Respecteer auteursrechten, gebruiksvoorwaarden en beveiligingsregels.
-
-Zie [Security](SECURITY.md), [Architecture](ARCHITECTURE.md), [Bunny deployment](https://bunny.net/docs/magic-containers/deploy), [Persistent Volumes](https://bunny.net/docs/magic-containers/persistent-volumes) en [Lampac-documentatie](https://docs.lampac.dev/).
+Lees ook [beveiliging](SECURITY.md), [architectuur](ARCHITECTURE.md), [officiële Bunny-uitrol](https://bunny.net/docs/magic-containers/deploy), [permanente volumes](https://bunny.net/docs/magic-containers/persistent-volumes) en [Lampac-documentatie](https://docs.lampac.dev/).

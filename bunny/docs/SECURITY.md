@@ -25,3 +25,7 @@ No claim is made that gVisor networking supports all P2P protocols, multicast di
 ## License
 
 The core is sourced from Lampac NextGen and retains **AGPL-3.0**. If you modify and offer the network service, comply with AGPL source availability requirements. This is an independent community deployment variant, not an official Bunny or Lampac distribution.
+
+## Verified deployment boundary
+
+The [2026-11-04 live acceptance](../../docs/acceptance/LIVE_BUNNY_ACCEPTANCE.md) records denied anonymous administrative/configuration routes and token-gated generic relays. It also records actual synthetic decoding and restart/SQLite tests. Physical devices and every provider are outside this scope. `listen.scheme="https"` controls advertised URLs; Kestrel still listens on internal HTTP 9118. Only authenticated internal requests may override the advertised scheme through `xscheme`.

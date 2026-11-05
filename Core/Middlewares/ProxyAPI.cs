@@ -51,6 +51,12 @@ public partial class ProxyAPI
             ? httpContext.Request.Path.Value.Substring(12) /// - /proxy-dash/
             : httpContext.Request.Path.Value.Substring(7); /// - /proxy/
 
+        if (Isdash && servPath.Length < 32)
+        {
+            httpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
+            return;
+        }
+
         var decryptLink = Isdash
             ? ProxyLink.Decrypt(servPath.AsSpan(0, 32), requestInfo.IP)
             : ProxyLink.Decrypt(servPath.AsSpan(), requestInfo.IP);

@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.ResponseCompression;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -220,7 +220,10 @@ public class CoreInit
     public static string Host(HttpContext httpContext, string suffix = null)
     {
         string scheme = string.IsNullOrEmpty(conf.listen.scheme) ? httpContext.Request.Scheme : conf.listen.scheme;
-        if (httpContext.Request.Headers.TryGetValue("xscheme", out var xscheme) && xscheme.Count > 0 && xscheme[0] is "http" or "https")
+        if (httpContext.Request.Headers.TryGetValue("lcrqpasswd", out var schemePassword)
+            && schemePassword.Count > 0 && schemePassword[0] == rootPasswd
+            && httpContext.Request.Headers.TryGetValue("xscheme", out var xscheme)
+            && xscheme.Count > 0 && xscheme[0] is "http" or "https")
             scheme = xscheme[0];
 
         if (!string.IsNullOrEmpty(conf.listen.host))

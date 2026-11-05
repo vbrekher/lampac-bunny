@@ -1,0 +1,690 @@
+{
+  "LIVE_DEPLOYMENT_VERIFIED": true,
+  "LIVE_ACCEPTANCE": "PASS",
+  "tested_at_utc": "2026-11-04T00:41:32.557951+00:00",
+  "tested_source_commit": "661cee831b9d35b6d8b94043346a17683f073a91",
+  "base_commit": "8deb82073b019b7b138b070519bd14ff0d0c6b23",
+  "image": {
+    "reference": "ghcr.io/vbrekher/lampac-bunny:v0.1.3",
+    "expected_digest": "sha256:25353ce71cf3bd5298877fd3b1cd40b2e9cbbeeaa8713fbedc126a02c69e66f2",
+    "observed_digest": "sha256:25353ce71cf3bd5298877fd3b1cd40b2e9cbbeeaa8713fbedc126a02c69e66f2",
+    "platform": "linux/amd64",
+    "source_commit": "183366c0a6604658204e9dbf762c03ec5a30b894",
+    "runtime_rid": "linux-x64",
+    "dotnet_runtime": ".NET 10.0.14",
+    "application_version_label": "bunny-preview"
+  },
+  "deployment": {
+    "app_id": "Q3pUflMpyF4frwM",
+    "status": "active",
+    "url": "https://mc-eggpu5qyvc.bunny.run",
+    "region": "AMS",
+    "runtime_type": "shared",
+    "auto_scaling": {
+      "min": 1,
+      "max": 1
+    },
+    "container_count": 1,
+    "endpoint_count": 1,
+    "port": 9118,
+    "volume_id": "e7caca4b-e1e6-42b6-8553-7f1a1be9a067",
+    "volume_size_gb": 5,
+    "volume_mount": "/lampac/database",
+    "pod_names": [
+      "Lw7ySFoy3QsPoy"
+    ],
+    "probes": {
+      "startup": {
+        "initialDelaySeconds": 15,
+        "periodSeconds": 10,
+        "timeoutSeconds": 7,
+        "failureThreshold": 60,
+        "successThreshold": 1,
+        "httpGet": {
+          "request": {
+            "path": "/version",
+            "portNumber": 9118
+          },
+          "response": {
+            "expectedStatusCode": "OK"
+          }
+        },
+        "tcpSocket": null,
+        "grpc": null
+      },
+      "readiness": {
+        "initialDelaySeconds": 15,
+        "periodSeconds": 10,
+        "timeoutSeconds": 7,
+        "failureThreshold": 12,
+        "successThreshold": 1,
+        "httpGet": {
+          "request": {
+            "path": "/version",
+            "portNumber": 9118
+          },
+          "response": {
+            "expectedStatusCode": "OK"
+          }
+        },
+        "tcpSocket": null,
+        "grpc": null
+      },
+      "liveness": {
+        "initialDelaySeconds": 15,
+        "periodSeconds": 10,
+        "timeoutSeconds": 7,
+        "failureThreshold": 12,
+        "successThreshold": 1,
+        "httpGet": {
+          "request": {
+            "path": "/version",
+            "portNumber": 9118
+          },
+          "response": {
+            "expectedStatusCode": "OK"
+          }
+        },
+        "tcpSocket": null,
+        "grpc": null
+      }
+    },
+    "temporary_diagnostic_container_removed": true,
+    "temporary_diagnostic_cdn_removed": true,
+    "temporary_crash_app_removed": true,
+    "existing_user_resources_modified": false
+  },
+  "checks": {
+    "anonymous_ghcr_pull": {
+      "status": "PASS",
+      "mandatory": true,
+      "detail": "Anonymous v0.1.1 and v0.1.3 manifests retrieved; exact OCI index digest and linux/amd64 verified."
+    },
+    "container_deployment": {
+      "status": "PASS",
+      "mandatory": true,
+      "detail": "Real Bunny application created and upgraded; current pinned v0.1.3 is active."
+    },
+    "container_healthy": {
+      "status": "PASS",
+      "mandatory": true,
+      "detail": "One ready pod, one ready Lampac container, exact expected image digest."
+    },
+    "version_http": {
+      "status": "PASS",
+      "mandatory": true,
+      "detail": "HTTP 200 with a nonempty 32-byte build hash."
+    },
+    "online_js": {
+      "status": "PASS",
+      "mandatory": true,
+      "detail": "HTTP 200 application/javascript, Node syntax check and browser Lampa plugin loading; HTTPS server URLs."
+    },
+    "https_tls": {
+      "status": "PASS",
+      "mandatory": true,
+      "detail": "Default certificate-chain and hostname validation succeeded; TLS 1.3."
+    },
+    "startup_readiness_liveness": {
+      "status": "PASS",
+      "mandatory": true,
+      "detail": "All three HTTP probes configured on /version port 9118; active/ready runtime observed after cold starts."
+    },
+    "restart_recovery": {
+      "status": "PASS",
+      "mandatory": true,
+      "detail": "Real API restart recovered in 53.1 seconds with unchanged SQLite response; CLI redeploy waited 51.4 seconds for a new healthy pod."
+    },
+    "sqlite_persistence": {
+      "status": "PASS",
+      "mandatory": true,
+      "detail": "Actual TimeCode API write, direct SQLite marker count=1, PRAGMA integrity_check=ok, unchanged record after restart and repeated installer runs."
+    },
+    "repeat_installation": {
+      "status": "PASS",
+      "mandatory": true,
+      "detail": "Repeated real shell installation kept one app, one original 5 GB volume, one endpoint and the same root password."
+    },
+    "wrong_api_key": {
+      "status": "PASS",
+      "mandatory": true,
+      "detail": "Real shell installer returned failure with HTTP 401; supplied invalid key was absent from output."
+    },
+    "unauthorized_admin_access": {
+      "status": "PASS",
+      "mandatory": true,
+      "detail": "Final admin/config/database/log routes return 404. Temporary stats control: no cookie 404, wrong cookie 404, valid root cookie 200."
+    },
+    "unrestricted_public_proxy": {
+      "status": "PASS",
+      "mandatory": true,
+      "detail": "Unauthenticated /media and /corseu return 401; raw/invalid proxy routes return 400 or 404; authorized synthetic relay actually decoded."
+    },
+    "unexpected_process_recovery": {
+      "status": "PASS",
+      "mandatory": true,
+      "detail": "Separate disposable v0.1.3 app: induced exit 137, automatic restart count=1, ready state and identical SQLite response; test app deleted."
+    },
+    "dotnet_log_review": {
+      "status": "PASS",
+      "mandatory": true,
+      "detail": "One pre-fix ArgumentOutOfRangeException reproduced on v0.1.1; fixed in v0.1.2+. Instrumented post-fix checks added no unhandled .NET exceptions."
+    },
+    "lampa_browser_catalogs": {
+      "status": "PASS",
+      "mandatory": false,
+      "detail": "Bundled Lampa web client rendered CUB home/catalog sections and plugin connected notice."
+    },
+    "permitted_media_playback": {
+      "status": "PASS",
+      "mandatory": false,
+      "detail": "Owned synthetic testsrc2 video relayed over HTTPS and decoded by FFmpeg: exit 0, 72 frames, 2.958333 seconds of reported output time."
+    },
+    "physical_tv_clients": {
+      "status": "NOT_TESTED",
+      "mandatory": false,
+      "detail": "No physical Samsung/Tizen/other TV hardware was tested."
+    },
+    "all_third_party_providers": {
+      "status": "NOT_TESTED",
+      "mandatory": false,
+      "detail": "Individual provider catalogs, subscriptions, content rights and all formats are outside this acceptance scope."
+    },
+    "cross_machine_concurrent_install": {
+      "status": "NOT_TESTED",
+      "mandatory": false,
+      "detail": "Local lock tested by design; no distributed account-wide create transaction is claimed."
+    },
+    "cloud_failure_injection": {
+      "status": "NOT_TESTED",
+      "mandatory": false,
+      "detail": "Regional exhaustion and CDN provisioning failure were not forcibly induced on the live account. Offline tests cover failure/retry behavior and recovery of a missing CDN endpoint; actual successful provisioning and partial-state reuse were exercised."
+    }
+  },
+  "http_evidence": {
+    "tested_at_utc": "2026-11-04T00:31:23.756833+00:00",
+    "url": "https://mc-eggpu5qyvc.bunny.run",
+    "http": [
+      {
+        "path": "/version?type=hash",
+        "http_status": 200,
+        "bytes": 32,
+        "content_type": "text/plain; charset=utf-8",
+        "location": null,
+        "body": "452f519c2941c30e71c8eea4c5ce9cb0",
+        "secret_in_body": false
+      },
+      {
+        "path": "/online.js",
+        "http_status": 200,
+        "bytes": 106216,
+        "content_type": "application/javascript; charset=utf-8",
+        "location": null,
+        "advertised_server_schemes": [
+          "https"
+        ],
+        "sha256": "0180d33e5ac5cd98d0a45375b9e6ba352fa6632e3f174b3cd4a1dee2e3b010de",
+        "javascript_syntax_passed": true,
+        "secret_in_body": false
+      },
+      {
+        "path": "/",
+        "http_status": 200,
+        "bytes": 6236,
+        "content_type": "text/html; charset=utf-8",
+        "location": null,
+        "secret_in_body": false
+      },
+      {
+        "path": "/adminpanel",
+        "http_status": 404,
+        "bytes": 0,
+        "content_type": null,
+        "location": null,
+        "secret_in_body": false
+      },
+      {
+        "path": "/adminpanel/api/init",
+        "http_status": 404,
+        "bytes": 0,
+        "content_type": null,
+        "location": null,
+        "secret_in_body": false
+      },
+      {
+        "path": "/adminpanel/api/current",
+        "http_status": 404,
+        "bytes": 0,
+        "content_type": null,
+        "location": null,
+        "secret_in_body": false
+      },
+      {
+        "path": "/database-editor/api/summary",
+        "http_status": 404,
+        "bytes": 0,
+        "content_type": null,
+        "location": null,
+        "secret_in_body": false
+      },
+      {
+        "path": "/stats/gc",
+        "http_status": 404,
+        "bytes": 0,
+        "content_type": null,
+        "location": null,
+        "secret_in_body": false
+      },
+      {
+        "path": "/weblog",
+        "http_status": 404,
+        "bytes": 0,
+        "content_type": null,
+        "location": null,
+        "secret_in_body": false
+      },
+      {
+        "path": "/passwd",
+        "http_status": 404,
+        "bytes": 0,
+        "content_type": null,
+        "location": null,
+        "secret_in_body": false
+      },
+      {
+        "path": "/init.conf",
+        "http_status": 404,
+        "bytes": 0,
+        "content_type": null,
+        "location": null,
+        "secret_in_body": false
+      },
+      {
+        "path": "/current.conf",
+        "http_status": 404,
+        "bytes": 0,
+        "content_type": null,
+        "location": null,
+        "secret_in_body": false
+      },
+      {
+        "path": "/users.json",
+        "http_status": 404,
+        "bytes": 0,
+        "content_type": null,
+        "location": null,
+        "secret_in_body": false
+      },
+      {
+        "path": "/database/TimeCode.sql",
+        "http_status": 404,
+        "bytes": 0,
+        "content_type": null,
+        "location": null,
+        "secret_in_body": false
+      },
+      {
+        "path": "/proxy/https://example.com",
+        "http_status": 400,
+        "bytes": 0,
+        "content_type": null,
+        "location": null,
+        "secret_in_body": false
+      },
+      {
+        "path": "/proxy-dash/invalid",
+        "http_status": 400,
+        "bytes": 0,
+        "content_type": null,
+        "location": null,
+        "secret_in_body": false
+      },
+      {
+        "path": "/proxyimg/https://example.com",
+        "http_status": 404,
+        "bytes": 0,
+        "content_type": null,
+        "location": null,
+        "secret_in_body": false
+      },
+      {
+        "path": "/media?url=https%3A%2F%2Fexample.com&type=video",
+        "http_status": 401,
+        "bytes": 40,
+        "content_type": "application/json; charset=utf-8",
+        "location": null,
+        "secret_in_body": false
+      },
+      {
+        "path": "/corseu?url=https%3A%2F%2Fexample.com",
+        "http_status": 401,
+        "bytes": 0,
+        "content_type": null,
+        "location": null,
+        "secret_in_body": false
+      },
+      {
+        "path": "/database/acceptance-sample.mp4",
+        "http_status": 404,
+        "bytes": 0,
+        "content_type": null,
+        "location": null,
+        "secret_in_body": false
+      },
+      {
+        "path": "/logs/app-20261103.log",
+        "http_status": 404,
+        "bytes": 0,
+        "content_type": null,
+        "location": null,
+        "secret_in_body": false
+      },
+      {
+        "tls_verified": true,
+        "protocol": "TLSv1.3",
+        "expires": "Dec 10 23:59:59 2026 GMT"
+      }
+    ]
+  },
+  "https_plugin_evidence": {
+    "status": 200,
+    "host_prefixes": [
+      "https://mc-eggpu5qyvc.bunny.run"
+    ],
+    "forced_https_ignores_unauthorized_xscheme": true,
+    "cors_allow_origin": "*"
+  },
+  "sqlite_evidence": {
+    "database": "/lampac/database/TimeCode.sql",
+    "table": "timecodes",
+    "direct_integrity_check": "ok",
+    "direct_marker_rows": 1,
+    "before_restart_sha256": "90988ab8b85d6ef4a803c6ec21e71856e7faa74c39ce2f6426bbfe392e6e4b6f",
+    "after_restart_same_record": true,
+    "restart": {
+      "http_status": 200,
+      "marker_found": true,
+      "same_response": true,
+      "recovery_seconds": 53.1
+    },
+    "repeat_installation": {
+      "status": "PASS",
+      "runs": [
+        {
+          "exit_code": 0,
+          "sqlite_http_status": 200,
+          "same_record": true
+        },
+        {
+          "exit_code": 0,
+          "sqlite_http_status": 200,
+          "same_record": true
+        }
+      ],
+      "before_sha256": "90988ab8b85d6ef4a803c6ec21e71856e7faa74c39ce2f6426bbfe392e6e4b6f",
+      "after_sha256": "90988ab8b85d6ef4a803c6ec21e71856e7faa74c39ce2f6426bbfe392e6e4b6f"
+    },
+    "modules_temporarily_enabled_for_test": [
+      "Sync",
+      "TimeCode"
+    ],
+    "published_defaults_restored": true
+  },
+  "installer_evidence": {
+    "started_at_utc": "2026-11-04T00:25:46.688810+00:00",
+    "before": {
+      "app_id": "Q3pUflMpyF4frwM",
+      "status": "active",
+      "matching_apps": 1,
+      "containers": 1,
+      "endpoints": 1,
+      "volume_ids": [
+        "e7caca4b-e1e6-42b6-8553-7f1a1be9a067"
+      ],
+      "volume_sizes_gb": [
+        5
+      ],
+      "password_same": true
+    },
+    "runs": [
+      {
+        "args": [],
+        "exit_code": 0,
+        "duration_seconds": 2.1,
+        "success_marker": true,
+        "snapshot": {
+          "app_id": "Q3pUflMpyF4frwM",
+          "status": "active",
+          "matching_apps": 1,
+          "containers": 1,
+          "endpoints": 1,
+          "volume_ids": [
+            "e7caca4b-e1e6-42b6-8553-7f1a1be9a067"
+          ],
+          "volume_sizes_gb": [
+            5
+          ],
+          "password_same": true
+        }
+      },
+      {
+        "args": [],
+        "exit_code": 0,
+        "duration_seconds": 1.8,
+        "success_marker": true,
+        "snapshot": {
+          "app_id": "Q3pUflMpyF4frwM",
+          "status": "active",
+          "matching_apps": 1,
+          "containers": 1,
+          "endpoints": 1,
+          "volume_ids": [
+            "e7caca4b-e1e6-42b6-8553-7f1a1be9a067"
+          ],
+          "volume_sizes_gb": [
+            5
+          ],
+          "password_same": true
+        }
+      },
+      {
+        "args": [
+          "--redeploy"
+        ],
+        "exit_code": 0,
+        "duration_seconds": 51.4,
+        "success_marker": true,
+        "snapshot": {
+          "app_id": "Q3pUflMpyF4frwM",
+          "status": "active",
+          "matching_apps": 1,
+          "containers": 1,
+          "endpoints": 1,
+          "volume_ids": [
+            "e7caca4b-e1e6-42b6-8553-7f1a1be9a067"
+          ],
+          "volume_sizes_gb": [
+            5
+          ],
+          "password_same": true
+        }
+      }
+    ],
+    "wrong_key": {
+      "exit_code": 1,
+      "http_401": true,
+      "key_not_echoed": true
+    },
+    "after": {
+      "app_id": "Q3pUflMpyF4frwM",
+      "status": "active",
+      "matching_apps": 1,
+      "containers": 1,
+      "endpoints": 1,
+      "volume_ids": [
+        "e7caca4b-e1e6-42b6-8553-7f1a1be9a067"
+      ],
+      "volume_sizes_gb": [
+        5
+      ],
+      "password_same": true
+    },
+    "status": "PASS",
+    "finished_at_utc": "2026-11-04T00:26:45.076058+00:00",
+    "final_source_recheck": {
+      "commit": "661cee831b9d35b6d8b94043346a17683f073a91",
+      "exit_code": 0,
+      "success_marker": true,
+      "tested_at_utc": "2026-11-04T00:41:32.557951+00:00"
+    }
+  },
+  "crash_evidence": {
+    "app_id": "D4E91nnJfqgbr2i",
+    "image": "ghcr.io/vbrekher/lampac-bunny:v0.1.3",
+    "digest": "sha256:25353ce71cf3bd5298877fd3b1cd40b2e9cbbeeaa8713fbedc126a02c69e66f2",
+    "started_at_utc": "2026-11-04T00:13:06.029755+00:00",
+    "synthetic_data_only": true,
+    "observations": [
+      {
+        "elapsed_seconds": 12.4,
+        "containers": [
+          {
+            "status": "notStarted",
+            "reason": "",
+            "numberOfRestarts": 0,
+            "exitCode": null
+          }
+        ]
+      },
+      {
+        "elapsed_seconds": 28.9,
+        "containers": [
+          {
+            "status": "started",
+            "reason": "",
+            "numberOfRestarts": 0,
+            "exitCode": null
+          }
+        ]
+      },
+      {
+        "elapsed_seconds": 34.4,
+        "containers": [
+          {
+            "status": "ready",
+            "reason": "",
+            "numberOfRestarts": 0,
+            "exitCode": null
+          }
+        ]
+      },
+      {
+        "elapsed_seconds": 107.3,
+        "containers": [
+          {
+            "status": "notStarted",
+            "reason": "Error",
+            "numberOfRestarts": 0,
+            "exitCode": 137
+          }
+        ]
+      },
+      {
+        "elapsed_seconds": 156.6,
+        "containers": [
+          {
+            "status": "notStarted",
+            "reason": "",
+            "numberOfRestarts": 1,
+            "exitCode": null
+          }
+        ]
+      },
+      {
+        "elapsed_seconds": 189.8,
+        "containers": [
+          {
+            "status": "ready",
+            "reason": "",
+            "numberOfRestarts": 1,
+            "exitCode": null
+          }
+        ]
+      }
+    ],
+    "before_sha256": "414f954fd3a8d2264610f596ea5e3133283b3f398988c690508b290d5104bb98",
+    "status": "PASS",
+    "after_sha256": "414f954fd3a8d2264610f596ea5e3133283b3f398988c690508b290d5104bb98",
+    "same_data": true,
+    "total_seconds": 190.3,
+    "cleanup_deleted_test_app": true
+  },
+  "media_evidence": {
+    "tested_at_utc": "2026-11-04T00:17:47.018280+00:00",
+    "source": "https://mc-6ahegkxvzb.bunny.run/sample.mp4",
+    "attribution": "Synthetic FFmpeg testsrc2 pattern generated for Lampac Bunny acceptance",
+    "license_source": null,
+    "route": "authorized /media -> encrypted /proxy/<token> over verified HTTPS",
+    "ffmpeg_image": "jrottenberg/ffmpeg:6.1-alpine",
+    "exit_code": 0,
+    "frames": 72,
+    "decoded_seconds": 2.958333,
+    "status": "PASS",
+    "stderr": "",
+    "temporary_source_endpoint_removed": true,
+    "source_sample_sha256": "e8f28312349daa810b14c50956ae9ef05aa38a336f1d7bc5848c2967fe537163"
+  },
+  "log_review": {
+    "pre_fix_unhandled_exceptions": 1,
+    "pre_fix_image": "v0.1.1",
+    "pre_fix_time_utc": "2026-11-03T23:56:29.118Z",
+    "issue": "ArgumentOutOfRangeException on short /proxy-dash/invalid",
+    "new_unhandled_exceptions_observed_after_fix": 0,
+    "scope": "Instrumented runtime period; diagnostics removed afterward."
+  },
+  "offline_validation": {
+    "scope": "Local/mock checks; not live acceptance evidence",
+    "preflight": "passed",
+    "installer_tests": {
+      "count": 22,
+      "result": "passed"
+    },
+    "local_acceptance_regression": "passed",
+    "shell_python_syntax": "passed",
+    "core_shared_publish_linux_x64": "passed",
+    "agent_metadata": "passed",
+    "git_diff_check": "passed",
+    "changed_file_secret_scan": "passed"
+  },
+  "history": [
+    {
+      "phase": "initial_preflight",
+      "status": "BLOCKED",
+      "detail": "Anonymous GHCR access was unavailable before the owner changed package visibility."
+    },
+    {
+      "phase": "v0.1.1_live",
+      "status": "FAIL",
+      "detail": "Private registry selection blocked pulling; short DASH token caused HTTP 500. Both fixed."
+    },
+    {
+      "phase": "v0.1.2_live",
+      "status": "FAIL",
+      "detail": "Advertised plugin URLs still used HTTP. Fixed in v0.1.3."
+    },
+    {
+      "phase": "v0.1.3_final",
+      "status": "PASS",
+      "detail": "All mandatory live checks passed with published defaults restored."
+    }
+  ],
+  "limitations": [
+    "Physical TV hardware and every upstream provider are not certified.",
+    "Runtime application build label remains bunny-preview; release identity is the immutable v0.1.3 image, digest and source commit.",
+    "Python 3.14.3 was used; execution on Python 3.10 itself was not performed.",
+    "The main app was initially created with the installer, then repaired/upgraded via API. Final shell reuse/redeploy was exercised; the current template was also created on a separate disposable v0.1.3 recovery app.",
+    "The starter profile disables stateful modules. SQLite tests temporarily enabled them and restored defaults afterward.",
+    "No cross-machine atomic installer lock, availability SLA or provider-wide security audit is claimed.",
+    "External Google/W3Schools media samples returned 403 directly; owned synthetic media was used for the successful decode."
+  ]
+}
