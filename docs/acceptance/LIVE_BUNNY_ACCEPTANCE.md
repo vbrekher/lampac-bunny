@@ -8,7 +8,7 @@ Verified at **2026-11-04T00:41:32.557951+00:00 UTC** against real Bunny Magic Co
 
 | Identity | Verified value |
 | --- | --- |
-| Tested installer source | `661cee831b9d35b6d8b94043346a17683f073a91` |
+| Tested installer source | `cfcee365ae9b8afeafefc936f382eba07a050db6` |
 | Runtime image source | `183366c0a6604658204e9dbf762c03ec5a30b894` (also reported by `/version?type=build`) |
 | Image | `ghcr.io/vbrekher/lampac-bunny:v0.1.3` |
 | OCI index digest | `sha256:25353ce71cf3bd5298877fd3b1cd40b2e9cbbeeaa8713fbedc126a02c69e66f2` |
@@ -35,6 +35,7 @@ Verified at **2026-11-04T00:41:32.557951+00:00 UTC** against real Bunny Magic Co
 | startup readiness liveness | PASS | All three HTTP probes configured on /version port 9118; active/ready runtime observed after cold starts. |
 | restart recovery | PASS | Real API restart recovered in 53.1 seconds with unchanged SQLite response; CLI redeploy waited 51.4 seconds for a new healthy pod. |
 | sqlite persistence | PASS | Actual TimeCode API write, direct SQLite marker count=1, PRAGMA integrity_check=ok, unchanged record after restart and repeated installer runs. |
+| one command pipe | PASS | Actual GitHub `curl .../install-bunny.sh` piped into Bash stdin downloaded pinned Python, called real Bunny API and returned healthy deployment success (exit 0). |
 | repeat installation | PASS | Repeated real shell installation kept one app, one original 5 GB volume, one endpoint and the same root password. |
 | wrong api key | PASS | Real shell installer returned failure with HTTP 401; supplied invalid key was absent from output. |
 | unauthorized admin access | PASS | Final admin/config/database/log routes return 404. Temporary stats control: no cookie 404, wrong cookie 404, valid root cookie 200. |
@@ -82,6 +83,8 @@ A generated **320×180, 24 fps testsrc2 video** was hosted temporarily and relay
 
 ## Bugs fixed
 
+- Handle Bash stdin execution with `set -u` safely and download the reviewed Python installer from immutable commit `661cee831b9d35b6d8b94043346a17683f073a91`; the real GitHub pipe flow and argument forwarding were checked.
+
 - Recover a missing CDN endpoint on an existing app without replacing the container ID or volume (offline regression); regional exhaustion/CDN control-plane failures were not forcibly injected into the live account.
 - Select an anonymous public GHCR registry instead of reusing unrelated private credentials; private account registries were unchanged.
 - Pin the verified OCI digest, hash manifest bytes, use the current AMS region ID, and preserve IDs, credentials, CDN and volume mounts during known-release upgrades.
@@ -95,11 +98,17 @@ A pre-fix .NET exception at `2026-11-03T23:56:29.118Z` was retained as evidence.
 
 ## Local validation and scope
 
-Passed: `bash bunny/scripts/preflight.sh`, **22** Python installer tests, `bash bunny/scripts/test-local-acceptance.sh`, shell/Python syntax, source builds of Core and Shared for Linux x64, agent metadata, link checks, credential scans and `git diff --check`. The local acceptance regression uses mocked Docker/curl and is not live evidence. Python used: 3.14.3.
+Passed: `bash bunny/scripts/preflight.sh`, **23** Python installer tests, `bash bunny/scripts/test-local-acceptance.sh`, shell/Python syntax, source builds of Core and Shared for Linux x64, agent metadata, link checks, credential scans and `git diff --check`. The local acceptance regression uses mocked Docker/curl and is not live evidence. Python used: 3.14.3.
 
 Physical Samsung/Tizen devices, all upstream providers, all media formats and cross-machine concurrent provisioning were not tested. The inherited application version label is `bunny-preview`; the verified release is identified by its versioned image, digest and reported source commit. This acceptance provides no availability SLA or provider-wide security guarantee. Use consistent SQLite backups and one replica in one region.
 
 The main app was initially created through the installer and then repaired/upgraded through the API. Final real shell reuse/redeploy was checked, and the current v0.1.3 template was also created on the separate recovery app. No second empty production app was provisioned merely to repeat the first-install path.
+
+## Continuation recheck — 2026-11-09
+
+At `2026-11-09T21:48:17.563627+00:00`, anonymous GHCR access to both v0.1.1 and v0.1.3 again passed exact digest and linux/amd64 verification. Public HTTPS, `/`, `/version`, `/online.js` syntax/HTTPS URLs and the administrative/proxy denial checks all passed again. The actual GitHub shell at `cfcee365ae9b8afeafefc936f382eba07a050db6` was downloaded with curl and piped into Bash; it downloaded the immutable Python installer, reused the real app and exited 0 with the deployment success marker. The original volume remains attached and the exact image digest is ready in AMS.
+
+The current pod `YF06MlyqrPvGdh` reports **11 container restarts**, compared with zero in the November 4 final snapshot. The public overview supplies no historical cause; current exit code is null and reason/message are empty. Current endpoint checks pass, but the cause of those intervening restarts is **unresolved**. This report certifies the observed acceptance scenarios, not continuous uptime. SQLite/restart/crash/media scenarios above were executed on November 3–4; they were not silently re-dated to this recheck. Review platform/runtime history before making an availability commitment.
 
 ## Resources and reproduction
 

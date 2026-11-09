@@ -2,7 +2,7 @@
   "LIVE_DEPLOYMENT_VERIFIED": true,
   "LIVE_ACCEPTANCE": "PASS",
   "tested_at_utc": "2026-11-04T00:41:32.557951+00:00",
-  "tested_source_commit": "661cee831b9d35b6d8b94043346a17683f073a91",
+  "tested_source_commit": "cfcee365ae9b8afeafefc936f382eba07a050db6",
   "base_commit": "8deb82073b019b7b138b070519bd14ff0d0c6b23",
   "image": {
     "reference": "ghcr.io/vbrekher/lampac-bunny:v0.1.3",
@@ -199,6 +199,11 @@
       "status": "NOT_TESTED",
       "mandatory": false,
       "detail": "Regional exhaustion and CDN provisioning failure were not forcibly induced on the live account. Offline tests cover failure/retry behavior and recovery of a missing CDN endpoint; actual successful provisioning and partial-state reuse were exercised."
+    },
+    "one_command_pipe": {
+      "status": "PASS",
+      "mandatory": true,
+      "detail": "Actual GitHub curl-to-bash stdin installation downloaded the pinned reviewed Python and reused the real healthy deployment; exit 0."
     }
   },
   "http_evidence": {
@@ -646,7 +651,7 @@
     "scope": "Local/mock checks; not live acceptance evidence",
     "preflight": "passed",
     "installer_tests": {
-      "count": 22,
+      "count": 23,
       "result": "passed"
     },
     "local_acceptance_regression": "passed",
@@ -685,6 +690,236 @@
     "The main app was initially created with the installer, then repaired/upgraded via API. Final shell reuse/redeploy was exercised; the current template was also created on a separate disposable v0.1.3 recovery app.",
     "The starter profile disables stateful modules. SQLite tests temporarily enabled them and restored defaults afterward.",
     "No cross-machine atomic installer lock, availability SLA or provider-wide security audit is claimed.",
-    "External Google/W3Schools media samples returned 403 directly; owned synthetic media was used for the successful decode."
-  ]
+    "External Google/W3Schools media samples returned 403 directly; owned synthetic media was used for the successful decode.",
+    "2026-11-09 continuation: current ready pod reports 11 container restarts since the earlier acceptance snapshot (which reported 0). Public overview provides no historical cause; current exitCode is null and reason/message are empty. This is not a continuous-uptime certification; investigate platform/runtime history before making an availability claim."
+  ],
+  "downloaded_python_commit": "661cee831b9d35b6d8b94043346a17683f073a91",
+  "pipe_evidence": {
+    "status": "PASS",
+    "tested_at_utc": "2026-11-04T00:46:33.398559+00:00",
+    "flow": "Bash stdin -> actual GitHub raw pinned Python -> actual Bunny API -> pinned ready pod and HTTPS checks",
+    "downloaded_python_commit": "661cee831b9d35b6d8b94043346a17683f073a91",
+    "exit_code": 0,
+    "shell_sha256": "99bf518d77f318b60652874d1083e7ba1499a65b57a19ee8bf6742bc3f88d1ff",
+    "shell_commit": "cfcee365ae9b8afeafefc936f382eba07a050db6",
+    "real_curl_pipe_exit_code": 0,
+    "real_curl_pipe_tested_at_utc": "2026-11-04T00:47:30.357584+00:00"
+  },
+  "continuation_recheck": {
+    "status": "PASS",
+    "tested_at_utc": "2026-11-09T21:48:17.563627+00:00",
+    "images": [
+      {
+        "tag": "v0.1.1",
+        "digest": "sha256:ec518a9170c5f4b4373545851f2325f285ee0daa26af6cd4ffa5819200b12adc",
+        "anonymous_verified": true
+      },
+      {
+        "tag": "v0.1.3",
+        "digest": "sha256:25353ce71cf3bd5298877fd3b1cd40b2e9cbbeeaa8713fbedc126a02c69e66f2",
+        "anonymous_verified": true
+      }
+    ],
+    "http_evidence": {
+      "tested_at_utc": "2026-11-09T21:47:23.948768+00:00",
+      "url": "https://mc-eggpu5qyvc.bunny.run",
+      "http": [
+        {
+          "path": "/version?type=hash",
+          "http_status": 200,
+          "bytes": 32,
+          "content_type": "text/plain; charset=utf-8",
+          "location": null,
+          "body": "452f519c2941c30e71c8eea4c5ce9cb0",
+          "secret_in_body": false
+        },
+        {
+          "path": "/online.js",
+          "http_status": 200,
+          "bytes": 106216,
+          "content_type": "application/javascript; charset=utf-8",
+          "location": null,
+          "advertised_server_schemes": [
+            "https"
+          ],
+          "sha256": "0180d33e5ac5cd98d0a45375b9e6ba352fa6632e3f174b3cd4a1dee2e3b010de",
+          "javascript_syntax_passed": true,
+          "secret_in_body": false
+        },
+        {
+          "path": "/",
+          "http_status": 200,
+          "bytes": 6236,
+          "content_type": "text/html; charset=utf-8",
+          "location": null,
+          "secret_in_body": false
+        },
+        {
+          "path": "/adminpanel",
+          "http_status": 404,
+          "bytes": 0,
+          "content_type": null,
+          "location": null,
+          "secret_in_body": false
+        },
+        {
+          "path": "/adminpanel/api/init",
+          "http_status": 404,
+          "bytes": 0,
+          "content_type": null,
+          "location": null,
+          "secret_in_body": false
+        },
+        {
+          "path": "/adminpanel/api/current",
+          "http_status": 404,
+          "bytes": 0,
+          "content_type": null,
+          "location": null,
+          "secret_in_body": false
+        },
+        {
+          "path": "/database-editor/api/summary",
+          "http_status": 404,
+          "bytes": 0,
+          "content_type": null,
+          "location": null,
+          "secret_in_body": false
+        },
+        {
+          "path": "/stats/gc",
+          "http_status": 404,
+          "bytes": 0,
+          "content_type": null,
+          "location": null,
+          "secret_in_body": false
+        },
+        {
+          "path": "/weblog",
+          "http_status": 404,
+          "bytes": 0,
+          "content_type": null,
+          "location": null,
+          "secret_in_body": false
+        },
+        {
+          "path": "/passwd",
+          "http_status": 404,
+          "bytes": 0,
+          "content_type": null,
+          "location": null,
+          "secret_in_body": false
+        },
+        {
+          "path": "/init.conf",
+          "http_status": 404,
+          "bytes": 0,
+          "content_type": null,
+          "location": null,
+          "secret_in_body": false
+        },
+        {
+          "path": "/current.conf",
+          "http_status": 404,
+          "bytes": 0,
+          "content_type": null,
+          "location": null,
+          "secret_in_body": false
+        },
+        {
+          "path": "/users.json",
+          "http_status": 404,
+          "bytes": 0,
+          "content_type": null,
+          "location": null,
+          "secret_in_body": false
+        },
+        {
+          "path": "/database/TimeCode.sql",
+          "http_status": 404,
+          "bytes": 0,
+          "content_type": null,
+          "location": null,
+          "secret_in_body": false
+        },
+        {
+          "path": "/proxy/https://example.com",
+          "http_status": 400,
+          "bytes": 0,
+          "content_type": null,
+          "location": null,
+          "secret_in_body": false
+        },
+        {
+          "path": "/proxy-dash/invalid",
+          "http_status": 400,
+          "bytes": 0,
+          "content_type": null,
+          "location": null,
+          "secret_in_body": false
+        },
+        {
+          "path": "/proxyimg/https://example.com",
+          "http_status": 404,
+          "bytes": 0,
+          "content_type": null,
+          "location": null,
+          "secret_in_body": false
+        },
+        {
+          "path": "/media?url=https%3A%2F%2Fexample.com&type=video",
+          "http_status": 401,
+          "bytes": 40,
+          "content_type": "application/json; charset=utf-8",
+          "location": null,
+          "secret_in_body": false
+        },
+        {
+          "path": "/corseu?url=https%3A%2F%2Fexample.com",
+          "http_status": 401,
+          "bytes": 0,
+          "content_type": null,
+          "location": null,
+          "secret_in_body": false
+        },
+        {
+          "path": "/database/acceptance-sample.mp4",
+          "http_status": 404,
+          "bytes": 0,
+          "content_type": null,
+          "location": null,
+          "secret_in_body": false
+        },
+        {
+          "path": "/logs/app-20261103.log",
+          "http_status": 404,
+          "bytes": 0,
+          "content_type": null,
+          "location": null,
+          "secret_in_body": false
+        },
+        {
+          "tls_verified": true,
+          "protocol": "TLSv1.3",
+          "expires": "Dec 10 23:59:59 2026 GMT"
+        }
+      ]
+    },
+    "platform": {
+      "app_status": "active",
+      "pod": "YF06MlyqrPvGdh",
+      "container_status": "ready",
+      "restart_count": 11,
+      "exit_code": null,
+      "reason": "",
+      "message": "",
+      "volume_id": "e7caca4b-e1e6-42b6-8553-7f1a1be9a067"
+    },
+    "one_command_pipe": {
+      "status": "PASS",
+      "shell_commit": "cfcee365ae9b8afeafefc936f382eba07a050db6",
+      "downloaded_python_commit": "661cee831b9d35b6d8b94043346a17683f073a91",
+      "exit_code": 0
+    }
+  }
 }
